@@ -24,7 +24,7 @@ EasExpo is an ASP.NET Core MVC application that fulfils the SRS for a stall rent
 
 ## Tech Stack
 - ASP.NET Core MVC 3.1 (Views in Razor `.cshtml`).
-- Entity Framework Core with SQLite (`App_Data/EasExpo.db`).
+- Entity Framework Core with SQL Server (connection string in `appsettings.json`).
 - ASP.NET Core Identity for authentication and role management.
 - Bootstrap-styled UI for a simple, responsive look.
 
@@ -39,7 +39,8 @@ DOTNET_NOLOGO=1 dotnet build
 DOTNET_NOLOGO=1 dotnet run
 ```
 
-- The database file is created automatically under `App_Data/EasExpo.db` during the first run.
+- The app expects a SQL Server instance reachable with the connection string configured under `ConnectionStrings:DefaultConnection`.
+- The sample connection string uses Windows Integrated Security; run the app from an environment that can authenticate against that SQL Server instance (for containers or non-Windows hosts, switch to SQL authentication or expose the server appropriately).
 - Seeded accounts:
   - Admin — `admin@easexpo.com` / `Admin@123`
   - Stall Owner — `owner@easexpo.com` / `Owner@123`

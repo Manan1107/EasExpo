@@ -50,14 +50,6 @@ namespace EasExpo.Models
                 .HasForeignKey(f => f.BookingId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Decimal support for SQLite
-            builder.Entity<Stall>()
-                .Property(s => s.RentPerDay)
-                .HasConversion<double>();
-
-            builder.Entity<Payment>()
-                .Property(p => p.Amount)
-                .HasConversion<double>();
         }
     }
 }
