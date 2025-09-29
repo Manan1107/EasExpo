@@ -1,0 +1,69 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.app
+*.appx
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.userprefs
+*.rsuser
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+.code-workspace
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+*.DotSettings.user
+_ReSharper*/
+
+# Logs
+*.log
+*.svclog
+
+# Test results
+TestResult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+artifacts/
+project.lock.json
+project.fragment.lock.json
+
+# Entity Framework
+*.dbmdl
+
+# Azure publish settings
+*.PublishSettings
+
+# ASP.NET Core
+wwwroot/lib/
+wwwroot/dist/
+
+# Node tooling
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log
+pnpm-debug.log*
+
+# Environment specific
+.env
+*.local.json
+
+# System files
+Thumbs.db
+.DS_Store
