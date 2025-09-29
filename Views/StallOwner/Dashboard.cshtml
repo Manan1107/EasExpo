@@ -1,0 +1,41 @@
+@model StallOwnerDashboardViewModel
+@{
+    ViewData["Title"] = "Stall owner dashboard";
+}
+
+<h1 class="mb-4">Owner dashboard</h1>
+<div class="row">
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body">
+                <h6 class="text-muted">My stalls</h6>
+                <h2>@Model.MyStallCount</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Pending bookings</h6>
+                <h2>@Model.PendingBookings</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Upcoming bookings</h6>
+                <h2>@Model.UpcomingBookings</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Total revenue</h6>
+                <h2>₹@Model.TotalRevenue.ToString("N2")</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<a class="btn btn-primary" asp-action="MyStalls">Manage my stalls</a>

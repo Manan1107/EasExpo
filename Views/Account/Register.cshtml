@@ -1,0 +1,90 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Create account";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4">
+                <h2 class="mb-3 text-center">Join EasExpo</h2>
+                <p class="text-muted text-center">Book, manage, and monitor stalls with ease.</p>
+                <form asp-action="Register" method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="FullName"></label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="Email"></label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label asp-for="Password"></label>
+                            <input asp-for="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label asp-for="ConfirmPassword"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="d-block">Registering as</label>
+                        <div class="custom-control custom-radio custom-control-inline">
+                            <input type="radio" class="custom-control-input" id="roleCustomer" name="UserType" value="Customer" @(Model.UserType == "Customer" ? "checked" : string.Empty) />
+                            <label class="custom-control-label" for="roleCustomer">Customer</label>
+                        </div>
+                        <div class="custom-control custom-radio custom-control-inline">
+                            <input type="radio" class="custom-control-input" id="roleOwner" name="UserType" value="StallOwner" @(Model.UserType == "StallOwner" ? "checked" : string.Empty) />
+                            <label class="custom-control-label" for="roleOwner">Stall owner</label>
+                        </div>
+                        <span asp-validation-for="UserType" class="text-danger d-block"></span>
+                    </div>
+                    <div id="ownerFields" class="border rounded p-3 mb-3" style="display:none;">
+                        <h5 class="h6 mb-3">Stall owner details</h5>
+                        <div class="form-group">
+                            <label asp-for="CompanyName"></label>
+                            <input asp-for="CompanyName" class="form-control" />
+                            <span asp-validation-for="CompanyName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="DocumentUrl"></label>
+                            <input asp-for="DocumentUrl" class="form-control" placeholder="https://" />
+                            <span asp-validation-for="DocumentUrl" class="text-danger"></span>
+                        </div>
+                        <div class="form-group">
+                            <label asp-for="AdditionalNotes"></label>
+                            <textarea asp-for="AdditionalNotes" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="AdditionalNotes" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Create account</button>
+                </form>
+                <p class="mt-3 text-center">Already have an account? <a asp-action="Login">Sign in</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const ownerFields = document.getElementById('ownerFields');
+            const toggleFields = () => {
+                const ownerSelected = document.getElementById('roleOwner').checked;
+                ownerFields.style.display = ownerSelected ? 'block' : 'none';
+            };
+            document.getElementById('roleCustomer').addEventListener('change', toggleFields);
+            document.getElementById('roleOwner').addEventListener('change', toggleFields);
+            toggleFields();
+        })();
+    </script>
+}

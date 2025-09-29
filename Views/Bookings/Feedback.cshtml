@@ -1,0 +1,32 @@
+@model FeedbackCreateViewModel
+@{
+    ViewData["Title"] = "Share feedback";
+}
+
+<h1 class="h3 mb-3">Share feedback for @Model.StallName</h1>
+<form asp-action="Feedback" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <input type="hidden" asp-for="BookingId" />
+    <div class="form-group">
+        <label asp-for="Rating"></label>
+        <select asp-for="Rating" class="form-control">
+            <option value="1">1 - Very poor</option>
+            <option value="2">2 - Needs improvement</option>
+            <option value="3">3 - Average</option>
+            <option value="4">4 - Good</option>
+            <option value="5">5 - Excellent</option>
+        </select>
+        <span asp-validation-for="Rating" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Comments"></label>
+        <textarea asp-for="Comments" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Comments" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit feedback</button>
+    <a asp-action="MyBookings" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

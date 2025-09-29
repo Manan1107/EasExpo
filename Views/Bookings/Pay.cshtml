@@ -1,0 +1,36 @@
+@model PaymentCheckoutViewModel
+@{
+    ViewData["Title"] = "Payment";
+}
+
+<h1 class="h3 mb-3">Complete payment</h1>
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <p class="mb-1 text-muted">Stall</p>
+        <h4>@Model.StallName</h4>
+        <p class="mb-3">Amount due: <strong>₹@Model.Amount.ToString("N2")</strong></p>
+        <form asp-action="Pay" method="post">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input type="hidden" asp-for="BookingId" />
+            <div class="form-group">
+                <label asp-for="PaymentProvider"></label>
+                <select asp-for="PaymentProvider" class="form-control">
+                    <option value="Razorpay">Razorpay</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Stripe">Stripe</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label asp-for="TransactionReference"></label>
+                <input asp-for="TransactionReference" class="form-control" />
+                <span asp-validation-for="TransactionReference" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Mock payment</button>
+            <a asp-action="MyBookings" class="btn btn-link">Cancel</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

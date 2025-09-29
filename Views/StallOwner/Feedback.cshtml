@@ -1,0 +1,27 @@
+@model IEnumerable<OwnerFeedbackViewModel>
+@{
+    ViewData["Title"] = "Customer feedback";
+}
+
+<h1 class="h3 mb-3">Customer feedback</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No feedback yet. Encourage customers to share their experience.</div>
+}
+else
+{
+    <div class="list-group shadow-sm">
+    @foreach (var feedback in Model)
+    {
+        <div class="list-group-item list-group-item-action flex-column align-items-start">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">@feedback.StallName</h5>
+                <small class="text-muted">@feedback.SubmittedAt.ToLocalTime().ToString("dd MMM yyyy")</small>
+            </div>
+            <p class="mb-1">@feedback.Comments</p>
+            <small class="text-muted">@feedback.CustomerName · Rating: @feedback.Rating/5</small>
+        </div>
+    }
+    </div>
+}

@@ -1,0 +1,63 @@
+@model AdminUserFormViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var isEdit = !string.IsNullOrEmpty(Model.Id);
+    ViewData["Title"] = isEdit ? "Edit user" : "Create user";
+}
+
+<h1 class="h3 mb-3">@ViewData["Title"]</h1>
+
+<form asp-action="@(isEdit ? "EditUser" : "CreateUser")" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="Id" />
+    }
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label asp-for="FullName"></label>
+            <input asp-for="FullName" class="form-control" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-6">
+            <label asp-for="Email"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label asp-for="CompanyName"></label>
+            <input asp-for="CompanyName" class="form-control" />
+            <span asp-validation-for="CompanyName" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-3">
+            <label asp-for="Role"></label>
+            <select asp-for="Role" class="form-control" asp-items="@(new SelectList(Model.AvailableRoles))">
+                <option value="">(Select role)</option>
+            </select>
+            <span asp-validation-for="Role" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-3 d-flex align-items-center">
+            <div class="form-check mt-4">
+                <input asp-for="IsActive" class="form-check-input" />
+                <label asp-for="IsActive" class="form-check-label"></label>
+            </div>
+        </div>
+    </div>
+    @if (!isEdit)
+    {
+        <div class="form-group">
+            <label asp-for="Password"></label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+    }
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Users" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

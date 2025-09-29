@@ -1,0 +1,59 @@
+@model IEnumerable<OwnerBookingViewModel>
+@{
+    ViewData["Title"] = "Customer requests";
+}
+
+<h1 class="h3 mb-3">Booking requests</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No bookings yet. Share your stall listings to get started.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="thead-light">
+                <tr>
+                    <th>Stall</th>
+                    <th>Customer</th>
+                    <th>Dates</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var booking in Model)
+            {
+                <tr>
+                    <td>@booking.StallName</td>
+                    <td>@booking.CustomerName</td>
+                    <td>@booking.StartDate.ToString("dd MMM") - @booking.EndDate.ToString("dd MMM yyyy")</td>
+                    <td>
+                        <span class="badge badge-pill @(booking.Status == BookingStatus.Approved ? "badge-success" : booking.Status == BookingStatus.Pending ? "badge-warning" : "badge-danger")">
+                            @booking.Status
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-pill @(booking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : booking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
+                            @booking.PaymentStatus
+                        </span>
+                    </td>
+                    <td class="text-right">
+                        @if (booking.Status == BookingStatus.Pending)
+                        {
+                            <form asp-action="ApproveBooking" asp-route-id="@booking.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                            </form>
+                            <form asp-action="RejectBooking" asp-route-id="@booking.Id" method="post" class="d-inline ml-1">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

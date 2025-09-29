@@ -1,0 +1,46 @@
+@model IEnumerable<StallListItemViewModel>
+@{
+    ViewData["Title"] = "Manage stalls";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Stalls</h1>
+    <a class="btn btn-primary" asp-action="CreateStall">Add stall</a>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead class="thead-light">
+        <tr>
+            <th>Name</th>
+            <th>Location</th>
+            <th>Size</th>
+            <th>Rent/day</th>
+            <th>Owner</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var stall in Model)
+    {
+        <tr>
+            <td>@stall.Name</td>
+            <td>@stall.Location</td>
+            <td>@stall.Size</td>
+            <td>₹@stall.RentPerDay.ToString("N2")</td>
+            <td>@stall.OwnerName</td>
+            <td>
+                <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">
+                    @stall.Status
+                </span>
+            </td>
+            <td class="text-right">
+                <a asp-action="EditStall" asp-route-id="@stall.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <form asp-action="DeleteStall" asp-route-id="@stall.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this stall?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

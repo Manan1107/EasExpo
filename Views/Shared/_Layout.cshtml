@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using EasExpo.Models.Constants
+@using EasExpo.Models
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -17,12 +19,74 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                    <ul class="navbar-nav ml-auto">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    @User.Identity.Name
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="accountDropdown">
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 py-1">
+                                        <button type="submit" class="btn btn-link dropdown-item">Sign out</button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Sign in</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link btn btn-sm btn-outline-primary ml-2" asp-controller="Account" asp-action="Register">Create account</a>
+                            </li>
+                        }
+                    </ul>
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-controller="Stalls" asp-action="Index">Stalls</a>
+                        </li>
+                        @if (User.IsInRole(RoleNames.Admin))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Admin
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Users">Users</a>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Stalls">Stalls</a>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="OwnerApplications">Owner applications</a>
+                                    <a class="dropdown-item" asp-controller="Admin" asp-action="PaymentReports">Payment reports</a>
+                                </div>
+                            </li>
+                        }
+                        @if (User.IsInRole(RoleNames.StallOwner))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="ownerDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Stall owner
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="ownerDropdown">
+                                    <a class="dropdown-item" asp-controller="StallOwner" asp-action="Dashboard">Dashboard</a>
+                                    <a class="dropdown-item" asp-controller="StallOwner" asp-action="MyStalls">My stalls</a>
+                                    <a class="dropdown-item" asp-controller="StallOwner" asp-action="Bookings">Bookings</a>
+                                    <a class="dropdown-item" asp-controller="StallOwner" asp-action="Feedback">Feedback</a>
+                                </div>
+                            </li>
+                        }
+                        @if (User.IsInRole(RoleNames.Customer))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Bookings" asp-action="MyBookings">My bookings</a>
+                            </li>
+                        }
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
                 </div>
@@ -30,6 +94,24 @@
         </nav>
     </header>
     <div class="container">
+        @if (TempData.ContainsKey("Success"))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["Success"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+        @if (TempData.ContainsKey("Error"))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["Error"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

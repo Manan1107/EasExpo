@@ -1,0 +1,69 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin dashboard";
+}
+
+<h1 class="mb-4">Admin dashboard</h1>
+<div class="row">
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Total users</h6>
+                <h2 class="mb-0">@Model.TotalUsers</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Active customers</h6>
+                <h2 class="mb-0">@Model.ActiveCustomers</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Active owners</h6>
+                <h2 class="mb-0">@Model.ActiveOwners</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Available stalls</h6>
+                <h2 class="mb-0">@Model.AvailableStalls</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Pending owner applications</h6>
+                <h2 class="mb-0">@Model.PendingOwnerApplications</h2>
+                <a asp-action="OwnerApplications" class="btn btn-link btn-sm px-0">Review applications</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Pending bookings</h6>
+                <h2 class="mb-0">@Model.PendingBookings</h2>
+                <small class="text-muted">Awaiting owner approvals</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Total revenue</h6>
+                <h2 class="mb-0">₹@Model.TotalRevenue.ToString("N2")</h2>
+                <small class="text-muted">@Model.TotalPayments payments · @Model.FailedPayments failures</small>
+            </div>
+        </div>
+    </div>
+</div>

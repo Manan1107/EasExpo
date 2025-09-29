@@ -1,0 +1,47 @@
+@model IEnumerable<PaymentReportItemViewModel>
+@{
+    ViewData["Title"] = "Payment reports";
+}
+
+<h1 class="h3 mb-3">Payment reports</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No payments have been recorded yet.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Processed on</th>
+                    <th>Stall</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Provider</th>
+                    <th>Reference</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var payment in Model)
+            {
+                <tr>
+                    <td>@payment.ProcessedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td>
+                    <td>@payment.StallName</td>
+                    <td>@payment.CustomerName</td>
+                    <td>₹@payment.Amount.ToString("N2")</td>
+                    <td>@payment.Provider</td>
+                    <td>@payment.TransactionReference</td>
+                    <td>
+                        <span class="badge badge-pill @(payment.Status == PaymentStatus.Completed ? "badge-success" : payment.Status == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
+                            @payment.Status
+                        </span>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
