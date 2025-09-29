@@ -27,7 +27,13 @@ namespace EasExpo
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<EasExpoDbContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            {
+                var connectionString = Configuration.GetConnectionString("DefaultConnection");
+                options.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.CommandTimeout(30);
+                });
+            });
 
             services.AddIdentity<ApplicationUser, IdentityRole>(options =>
                 {
