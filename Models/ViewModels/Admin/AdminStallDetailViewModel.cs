@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EasExpo.Models.Enums;
+using EasExpo.Models.ViewModels.StallOwner;
 
 namespace EasExpo.Models.ViewModels.Admin
 {
