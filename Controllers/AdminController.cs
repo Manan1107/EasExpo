@@ -59,18 +59,19 @@ namespace EasExpo.Controllers
         {
             var users = await _userManager.Users.OrderBy(u => u.FullName).ToListAsync();
 
-            var viewModel = await Task.WhenAll(users.Select(async user =>
+            var viewModel = new List<AdminUserListItemViewModel>(users.Count);
+            foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
-                return new AdminUserListItemViewModel
+                viewModel.Add(new AdminUserListItemViewModel
                 {
                     Id = user.Id,
                     FullName = user.FullName,
                     Email = user.Email,
                     Role = roles.FirstOrDefault() ?? "-",
                     IsActive = user.IsActive
-                };
-            }));
+                });
+            }
 
             return View(viewModel);
         }
