@@ -4,24 +4,39 @@ using System.Threading.Tasks;
 using EasExpo.Models;
 using EasExpo.Models.Constants;
 using EasExpo.Models.Enums;
+using EasExpo.Models.Options;
 using EasExpo.Models.ViewModels.Bookings;
+using EasExpo.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace EasExpo.Controllers
 {
-    [Authorize(Roles = RoleNames.Customer + "," + RoleNames.StallOwner)]
+    [Authorize(Roles = RoleNames.Customer)]
     public class BookingsController : Controller
     {
         private readonly EasExpoDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IRazorpayService _razorpayService;
+        private readonly RazorpayOptions _razorpayOptions;
+        private readonly ILogger<BookingsController> _logger;
 
-        public BookingsController(EasExpoDbContext context, UserManager<ApplicationUser> userManager)
+        public BookingsController(
+            EasExpoDbContext context,
+            UserManager<ApplicationUser> userManager,
+            IRazorpayService razorpayService,
+            IOptions<RazorpayOptions> razorpayOptions,
+            ILogger<BookingsController> logger)
         {
             _context = context;
             _userManager = userManager;
+            _razorpayService = razorpayService;
+            _razorpayOptions = razorpayOptions?.Value ?? new RazorpayOptions();
+            _logger = logger;
         }
 
         [HttpGet]
@@ -134,11 +149,25 @@ namespace EasExpo.Controllers
             var userId = _userManager.GetUserId(User);
             var booking = await _context.Bookings
                 .Include(b => b.Stall)
+                .Include(b => b.Customer)
                 .FirstOrDefaultAsync(b => b.Id == id && b.CustomerId == userId);
 
-            if (booking == null || booking.Status == BookingStatus.Rejected)
+            if (booking == null)
             {
                 return NotFound();
+            }
+
+            if (booking.Status != BookingStatus.Approved)
+            {
+                TempData["Error"] = "Payments can be made once the booking has been approved by the stall owner.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            if (string.IsNullOrWhiteSpace(_razorpayOptions.KeyId) || string.IsNullOrWhiteSpace(_razorpayOptions.KeySecret))
+            {
+                _logger.LogError("Razorpay keys are not configured. Payment initiation blocked for booking {BookingId}.", booking.Id);
+                TempData["Error"] = "Payment gateway is not configured. Please contact support.";
+                return RedirectToAction(nameof(MyBookings));
             }
 
             if (booking.PaymentStatus == PaymentStatus.Completed)
@@ -147,20 +176,74 @@ namespace EasExpo.Controllers
                 return RedirectToAction(nameof(MyBookings));
             }
 
-            var model = new PaymentCheckoutViewModel
-            {
-                BookingId = booking.Id,
-                StallName = booking.Stall.Name,
-                Amount = CalculateAmount(booking.StartDate, booking.EndDate, booking.Stall.RentPerDay)
-            };
+            var amount = CalculateAmount(booking.StartDate, booking.EndDate, booking.Stall.RentPerDay);
 
-            return View(model);
+            try
+            {
+                var receipt = $"BK-{booking.Id}-{DateTime.UtcNow.Ticks}";
+                var order = await _razorpayService.CreateOrderAsync(amount, "INR", receipt);
+
+                var payment = await _context.Payments
+                    .FirstOrDefaultAsync(p => p.BookingId == booking.Id && p.Status == PaymentStatus.Pending);
+
+                if (payment == null)
+                {
+                    payment = new Payment
+                    {
+                        BookingId = booking.Id,
+                        Amount = amount,
+                        Provider = "Razorpay",
+                        TransactionReference = order.OrderId,
+                        Status = PaymentStatus.Pending,
+                        ProcessedAt = DateTime.UtcNow
+                    };
+                    _context.Payments.Add(payment);
+                }
+                else
+                {
+                    payment.Amount = amount;
+                    payment.TransactionReference = order.OrderId;
+                    payment.Status = PaymentStatus.Pending;
+                    payment.ProcessedAt = DateTime.UtcNow;
+                }
+
+                booking.PaymentStatus = PaymentStatus.Pending;
+                await _context.SaveChangesAsync();
+
+                var model = new PaymentCheckoutViewModel
+                {
+                    BookingId = booking.Id,
+                    StallName = booking.Stall.Name,
+                    Amount = amount,
+                    Currency = order.Currency,
+                    RazorpayOrderId = order.OrderId,
+                    RazorpayKey = _razorpayOptions.KeyId,
+                    CustomerName = booking.Customer?.FullName ?? booking.Customer?.UserName,
+                    CustomerEmail = booking.Customer?.Email,
+                    CustomerContact = booking.Customer?.PhoneNumber,
+                    Notes = $"Booking #{booking.Id}"
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create Razorpay order for booking {BookingId}", booking.Id);
+                TempData["Error"] = "We couldn't start the payment. Please try again in a moment.";
+                return RedirectToAction(nameof(MyBookings));
+            }
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Pay(PaymentCheckoutViewModel model)
+        public async Task<IActionResult> CompletePayment(PaymentConfirmationViewModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Invalid payment confirmation received.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
             var userId = _userManager.GetUserId(User);
             var booking = await _context.Bookings
                 .Include(b => b.Stall)
@@ -171,26 +254,75 @@ namespace EasExpo.Controllers
                 return NotFound();
             }
 
+            if (booking.Status != BookingStatus.Approved)
+            {
+                TempData["Error"] = "The booking is not approved yet.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
             if (booking.PaymentStatus == PaymentStatus.Completed)
             {
                 TempData["Success"] = "Payment already processed.";
                 return RedirectToAction(nameof(MyBookings));
             }
 
-            var payment = new Payment
-            {
-                BookingId = booking.Id,
-                Amount = CalculateAmount(booking.StartDate, booking.EndDate, booking.Stall.RentPerDay),
-                Provider = string.IsNullOrWhiteSpace(model.PaymentProvider) ? "Razorpay" : model.PaymentProvider,
-                TransactionReference = string.IsNullOrWhiteSpace(model.TransactionReference)
-                    ? $"SIM-{DateTime.UtcNow:yyyyMMddHHmmss}"
-                    : model.TransactionReference,
-                Status = PaymentStatus.Completed,
-                ProcessedAt = DateTime.UtcNow
-            };
+            var amount = CalculateAmount(booking.StartDate, booking.EndDate, booking.Stall.RentPerDay);
+            var payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.BookingId == booking.Id && p.TransactionReference == model.RazorpayOrderId && p.Status == PaymentStatus.Pending);
 
-            _context.Payments.Add(payment);
+            if (payment == null)
+            {
+                payment = new Payment
+                {
+                    BookingId = booking.Id,
+                    Amount = amount,
+                    Provider = "Razorpay",
+                    TransactionReference = model.RazorpayOrderId,
+                    Status = PaymentStatus.Pending,
+                    ProcessedAt = DateTime.UtcNow
+                };
+                _context.Payments.Add(payment);
+            }
+            else
+            {
+                payment.Amount = amount;
+            }
+
+            bool isValid;
+            try
+            {
+                isValid = await _razorpayService.VerifyPaymentAsync(model.RazorpayOrderId, model.RazorpayPaymentId, model.RazorpaySignature);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to verify Razorpay signature for booking {BookingId}", booking.Id);
+                payment.Status = PaymentStatus.Failed;
+                payment.ProcessedAt = DateTime.UtcNow;
+                booking.PaymentStatus = PaymentStatus.Pending;
+                await _context.SaveChangesAsync();
+
+                TempData["Error"] = "We couldn't verify the payment signature. Please contact support if you were charged.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            if (!isValid)
+            {
+                payment.Status = PaymentStatus.Failed;
+                payment.ProcessedAt = DateTime.UtcNow;
+                booking.PaymentStatus = PaymentStatus.Pending;
+                await _context.SaveChangesAsync();
+
+                TempData["Error"] = "Payment verification failed. No charges were captured.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            payment.Status = PaymentStatus.Completed;
+            payment.TransactionReference = model.RazorpayPaymentId;
+            payment.ProcessedAt = DateTime.UtcNow;
+            payment.Provider = $"Razorpay (Order: {model.RazorpayOrderId})";
             booking.PaymentStatus = PaymentStatus.Completed;
+            booking.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Payment processed successfully.";

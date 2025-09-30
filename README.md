@@ -1,6 +1,6 @@
 # EasExpo – Stall Rent Management System
 
-EasExpo is an ASP.NET Core MVC application that fulfils the SRS for a stall rent management platform. It supports three roles—Admin, Stall Owner, and Customer—and demonstrates role-based dashboards, booking workflows, and mock payment processing.
+EasExpo is an ASP.NET Core MVC application that fulfils the SRS for a stall rent management platform. It supports three roles—Admin, Stall Owner, and Customer—and delivers role-based dashboards, booking workflows, and Razorpay-backed online payments.
 
 ## Features
 
@@ -19,7 +19,7 @@ EasExpo is an ASP.NET Core MVC application that fulfils the SRS for a stall rent
 ### Customer
 - Register and authenticate securely.
 - Browse stalls with search and status filters.
-- Request bookings, submit mock payments, and inspect booking history.
+- Request bookings, pay securely through Razorpay, and inspect booking history.
 - Leave feedback after completed reservations.
 
 ## Tech Stack
@@ -27,6 +27,7 @@ EasExpo is an ASP.NET Core MVC application that fulfils the SRS for a stall rent
 - Entity Framework Core with SQL Server (connection string in `appsettings.json`).
 - ASP.NET Core Identity for authentication and role management.
 - Bootstrap-styled UI for a simple, responsive look.
+- Razorpay checkout integration for collecting stall rent online.
 
 ## Getting Started
 
@@ -40,6 +41,7 @@ DOTNET_NOLOGO=1 dotnet run
 ```
 
 - The app expects a SQL Server instance reachable with the connection string configured under `ConnectionStrings:DefaultConnection`.
+- Configure Razorpay keys in `appsettings.json` (and `appsettings.Development.json` if required) under the `Razorpay` section: `KeyId` and `KeySecret`.
 - The sample connection string uses Windows Integrated Security; run the app from an environment that can authenticate against that SQL Server instance (for containers or non-Windows hosts, switch to SQL authentication or expose the server appropriately).
 - Seeded accounts:
   - Admin — `admin@easexpo.com` / `Admin@123`
@@ -55,6 +57,6 @@ DOTNET_NOLOGO=1 dotnet run
 - `Data/DbSeeder.cs` – Bootstraps roles, users, demo stalls, and sample transactions.
 
 ## Next Steps
-- Swap the mock payment flow for real Razorpay/PayPal gateway integration.
 - Add email notifications for booking approvals and payment receipts.
+- Build automated reporting exports (CSV/PDF) for admins.
 - Upgrade to .NET 6/8 for a fully supported runtime.

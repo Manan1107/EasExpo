@@ -1,6 +1,8 @@
 @model StallDetailsViewModel
 @{
     ViewData["Title"] = Model.Name;
+    var canBook = ViewBag.CanBook as bool? ?? false;
+    var isAuthenticated = ViewBag.IsAuthenticated as bool? ?? false;
 }
 
 <div class="row">
@@ -28,9 +30,15 @@
                 <h5>Ready to book?</h5>
                 @if (Model.Status == StallStatus.Available)
                 {
-                    @if (ViewBag.CanBook)
+                    if (canBook)
                     {
                         <a asp-controller="Bookings" asp-action="Book" asp-route-stallId="@Model.Id" class="btn btn-primary btn-block">Book now</a>
+                    }
+                    else if (isAuthenticated)
+                    {
+                        <div class="alert alert-info mb-0">
+                            Only customer accounts can place bookings. Please use a customer login.
+                        </div>
                     }
                     else
                     {

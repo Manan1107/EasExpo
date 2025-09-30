@@ -74,8 +74,8 @@ namespace EasExpo.Controllers
                 return NotFound();
             }
 
-            ViewBag.CanBook = User.Identity.IsAuthenticated;
-            ViewBag.IsOwner = User.IsInRole(RoleNames.StallOwner);
+            ViewBag.CanBook = User.Identity.IsAuthenticated && User.IsInRole(RoleNames.Customer);
+            ViewBag.IsAuthenticated = User.Identity.IsAuthenticated;
             return View(stall);
         }
     }

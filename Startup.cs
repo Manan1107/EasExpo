@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using EasExpo.Models;
+using EasExpo.Models.Options;
+using EasExpo.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -54,6 +53,12 @@ namespace EasExpo
 
             services.AddControllersWithViews()
                 .AddRazorRuntimeCompilation();
+
+            services.Configure<RazorpayOptions>(Configuration.GetSection("Razorpay"));
+            services.AddHttpClient<IRazorpayService, RazorpayService>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.razorpay.com/v1/");
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

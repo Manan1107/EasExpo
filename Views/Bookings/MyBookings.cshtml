@@ -42,7 +42,7 @@ else
                     </td>
                     <td>₹@booking.Amount.ToString("N2")</td>
                     <td class="text-right">
-                        @if (booking.Status != BookingStatus.Rejected && booking.PaymentStatus != PaymentStatus.Completed)
+                        @if (booking.Status == BookingStatus.Approved && booking.PaymentStatus != PaymentStatus.Completed)
                         {
                             <a asp-action="Pay" asp-route-id="@booking.Id" class="btn btn-sm btn-primary">Pay now</a>
                         }

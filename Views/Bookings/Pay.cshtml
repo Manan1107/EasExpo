@@ -9,28 +9,87 @@
         <p class="mb-1 text-muted">Stall</p>
         <h4>@Model.StallName</h4>
         <p class="mb-3">Amount due: <strong>₹@Model.Amount.ToString("N2")</strong></p>
-        <form asp-action="Pay" method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <input type="hidden" asp-for="BookingId" />
-            <div class="form-group">
-                <label asp-for="PaymentProvider"></label>
-                <select asp-for="PaymentProvider" class="form-control">
-                    <option value="Razorpay">Razorpay</option>
-                    <option value="PayPal">PayPal</option>
-                    <option value="Stripe">Stripe</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label asp-for="TransactionReference"></label>
-                <input asp-for="TransactionReference" class="form-control" />
-                <span asp-validation-for="TransactionReference" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-primary">Mock payment</button>
-            <a asp-action="MyBookings" class="btn btn-link">Cancel</a>
+        <p class="text-muted">You'll be redirected to Razorpay's secure checkout to complete this payment.</p>
+
+        <div id="payment-error" class="alert alert-danger d-none" role="alert"></div>
+
+        <form id="payment-form" asp-action="CompletePayment" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="BookingId" value="@Model.BookingId" />
+            <input type="hidden" name="RazorpayOrderId" value="@Model.RazorpayOrderId" />
+            <input type="hidden" id="razorpayPaymentId" name="RazorpayPaymentId" />
+            <input type="hidden" id="razorpaySignature" name="RazorpaySignature" />
         </form>
+
+        <button id="pay-button" class="btn btn-primary">Pay with Razorpay</button>
+        <a asp-action="MyBookings" class="btn btn-link">Cancel</a>
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        (function () {
+            const payButton = document.getElementById('pay-button');
+            const paymentError = document.getElementById('payment-error');
+            const form = document.getElementById('payment-form');
+
+            if (!payButton || !form) {
+                return;
+            }
+
+            const options = {
+                key: '@Model.RazorpayKey',
+                amount: '@Model.AmountInPaise',
+                currency: '@Model.Currency',
+                name: 'EasExpo',
+                description: '@(Model.Notes ?? "Stall booking payment")',
+                order_id: '@Model.RazorpayOrderId',
+                prefill: {
+                    name: '@(Model.CustomerName ?? string.Empty)',
+                    email: '@(Model.CustomerEmail ?? string.Empty)',
+                    contact: '@(Model.CustomerContact ?? string.Empty)'
+                },
+                notes: {
+                    bookingId: '@Model.BookingId',
+                    stall: '@Model.StallName'
+                },
+                theme: {
+                    color: '#1a73e8'
+                },
+                handler: function (response) {
+                    document.getElementById('razorpayPaymentId').value = response.razorpay_payment_id;
+                    document.getElementById('razorpaySignature').value = response.razorpay_signature;
+                    form.submit();
+                }
+            };
+
+            if (!options.key || !options.order_id) {
+                paymentError.classList.remove('d-none');
+                paymentError.textContent = 'Payment gateway is not configured.';
+                payButton.disabled = true;
+                return;
+            }
+
+            const rzp = new Razorpay(options);
+
+            rzp.on('payment.failed', function (response) {
+                payButton.disabled = false;
+                paymentError.classList.remove('d-none');
+                paymentError.textContent = response.error && response.error.description
+                    ? response.error.description
+                    : 'Payment failed. Please try again.';
+            });
+
+            payButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                paymentError.classList.add('d-none');
+                payButton.disabled = true;
+                rzp.open();
+                setTimeout(function () {
+                    payButton.disabled = false;
+                }, 3000);
+            });
+        })();
+    </script>
 }

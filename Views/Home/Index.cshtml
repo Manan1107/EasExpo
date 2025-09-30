@@ -1,4 +1,5 @@
-﻿@{
+﻿@using EasExpo.Models.Constants
+@{
     ViewData["Title"] = "EasExpo";
 }
 
@@ -8,7 +9,18 @@
     @if (User.Identity.IsAuthenticated)
     {
         <a asp-controller="Stalls" asp-action="Index" class="btn btn-primary btn-lg mr-2">Browse stalls</a>
-        <a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-outline-primary btn-lg">My bookings</a>
+        @if (User.IsInRole(RoleNames.Customer))
+        {
+            <a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-outline-primary btn-lg">My bookings</a>
+        }
+        else if (User.IsInRole(RoleNames.StallOwner))
+        {
+            <a asp-controller="StallOwner" asp-action="Dashboard" class="btn btn-outline-primary btn-lg">Owner dashboard</a>
+        }
+        else if (User.IsInRole(RoleNames.Admin))
+        {
+            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-primary btn-lg">Admin dashboard</a>
+        }
     }
     else
     {
@@ -63,16 +75,26 @@
     <div class="row align-items-center">
         <div class="col-md-6">
             <h2>Why EasExpo?</h2>
-            <p class="text-muted">We combine a responsive ASP.NET Core front-end with secure identity, data-rich dashboards, and mock payment workflow support so your team can focus on experiences, not spreadsheets.</p>
-            <p class="text-muted">Integrate Razorpay or PayPal later with ease—the payment flow is already wired for success.</p>
+            <p class="text-muted">We combine a responsive ASP.NET Core front-end with secure identity, data-rich dashboards, and integrated Razorpay payments so your team can focus on experiences, not spreadsheets.</p>
+            <p class="text-muted">Collect stall rent instantly through Razorpay while owners approve bookings and admins monitor revenue in real time.</p>
         </div>
         <div class="col-md-6">
             <div class="border rounded p-4 shadow-sm bg-white">
                 <h5 class="mb-3">Quick links</h5>
                 <ul class="list-unstyled mb-0">
                     <li><a asp-controller="Stalls" asp-action="Index">Browse stalls</a></li>
-                    <li><a asp-controller="Bookings" asp-action="MyBookings">Manage bookings</a></li>
-                    <li><a asp-controller="Admin" asp-action="Dashboard">Admin dashboard</a></li>
+                    @if (User.IsInRole(RoleNames.Customer))
+                    {
+                        <li><a asp-controller="Bookings" asp-action="MyBookings">My bookings</a></li>
+                    }
+                    @if (User.IsInRole(RoleNames.StallOwner))
+                    {
+                        <li><a asp-controller="StallOwner" asp-action="Dashboard">Owner dashboard</a></li>
+                    }
+                    @if (User.IsInRole(RoleNames.Admin))
+                    {
+                        <li><a asp-controller="Admin" asp-action="Dashboard">Admin dashboard</a></li>
+                    }
                 </ul>
             </div>
         </div>

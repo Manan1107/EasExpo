@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace EasExpo.Models.ViewModels.Bookings
 {
@@ -8,9 +7,14 @@ namespace EasExpo.Models.ViewModels.Bookings
         public int BookingId { get; set; }
         public string StallName { get; set; }
         public decimal Amount { get; set; }
-        public string PaymentProvider { get; set; } = "Razorpay";
+        public string Currency { get; set; } = "INR";
+        public string RazorpayOrderId { get; set; }
+        public string RazorpayKey { get; set; }
+        public string CustomerName { get; set; }
+        public string CustomerEmail { get; set; }
+        public string CustomerContact { get; set; }
+        public string Notes { get; set; }
 
-        [Display(Name = "Reference (optional)")]
-        public string TransactionReference { get; set; }
+        public int AmountInPaise => (int)Math.Round(Amount * 100m, MidpointRounding.AwayFromZero);
     }
 }
