@@ -20,16 +20,20 @@ namespace EasExpo.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string status = "Available", string search = null)
+        public async Task<IActionResult> Index(string status = null, string search = null)
         {
             var query = _context.Stalls.Include(s => s.Owner).AsQueryable();
+
+            var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "All" : status;
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(s => s.Name.Contains(search) || s.Location.Contains(search));
             }
 
-            if (!string.IsNullOrWhiteSpace(status) && System.Enum.TryParse(status, out StallStatus parsedStatus))
+            if (!string.IsNullOrWhiteSpace(status) &&
+                !string.Equals(status, "All", System.StringComparison.OrdinalIgnoreCase) &&
+                System.Enum.TryParse(status, out StallStatus parsedStatus))
             {
                 query = query.Where(s => s.Status == parsedStatus);
             }
@@ -47,7 +51,7 @@ namespace EasExpo.Controllers
                     Status = s.Status
                 }).ToListAsync();
 
-            ViewData["SelectedStatus"] = status;
+            ViewData["SelectedStatus"] = normalizedStatus;
             ViewData["Search"] = search;
             return View(stalls);
         }
