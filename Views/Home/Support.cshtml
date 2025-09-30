@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Help & support";
+}
+
+<h1 class="h3 mb-4">Help &amp; support</h1>
+<p class="text-muted">Need assistance with bookings, payments, or account management? We’re here to help.</p>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Support options</h5>
+        <p class="mb-2"><strong>Email:</strong> <a href="mailto:support@easexpo.com">support@easexpo.com</a></p>
+        <p class="mb-2"><strong>Phone:</strong> +91 98765 43210 (Mon–Fri, 9am–6pm IST)</p>
+        <p class="mb-0 text-muted">We typically reply within one business day. Include your booking reference for faster assistance.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <h5 class="card-title">Self-help resources</h5>
+        <ul class="mb-0 pl-3">
+            <li>Check your <a asp-controller="Bookings" asp-action="MyBookings">booking history</a> for status updates.</li>
+            <li>Visit <a asp-controller="Home" asp-action="Feedback">feedback centre</a> to share suggestions.</li>
+            <li>Contact the stall owner directly using their details in your booking confirmation email.</li>
+        </ul>
+    </div>
+</div>

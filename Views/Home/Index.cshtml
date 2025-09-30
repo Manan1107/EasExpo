@@ -80,22 +80,13 @@
         </div>
         <div class="col-md-6">
             <div class="border rounded p-4 shadow-sm bg-white">
-                <h5 class="mb-3">Quick links</h5>
-                <ul class="list-unstyled mb-0">
-                    <li><a asp-controller="Stalls" asp-action="Index">Browse stalls</a></li>
-                    @if (User.IsInRole(RoleNames.Customer))
-                    {
-                        <li><a asp-controller="Bookings" asp-action="MyBookings">My bookings</a></li>
-                    }
-                    @if (User.IsInRole(RoleNames.StallOwner))
-                    {
-                        <li><a asp-controller="StallOwner" asp-action="Dashboard">Owner dashboard</a></li>
-                    }
-                    @if (User.IsInRole(RoleNames.Admin))
-                    {
-                        <li><a asp-controller="Admin" asp-action="Dashboard">Admin dashboard</a></li>
-                    }
-                </ul>
+                <h5 class="mb-3">Need assistance?</h5>
+                <p class="text-muted mb-3">Visit our help centre to find guides, or reach out to the support team whenever you get stuck.</p>
+                <a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Go to help &amp; support</a>
+                @if (User.IsInRole(RoleNames.Customer))
+                {
+                    <a asp-controller="Home" asp-action="Feedback" class="btn btn-link d-block mt-2 pl-0">Share feedback</a>
+                }
             </div>
         </div>
     </div>

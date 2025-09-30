@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using EasExpo.Models;
+using EasExpo.Models.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -23,7 +25,14 @@ namespace EasExpo.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        [Authorize(Roles = RoleNames.Customer)]
+        public IActionResult Feedback()
+        {
+            return View();
+        }
+
+        [Authorize(Roles = RoleNames.Customer)]
+        public IActionResult Support()
         {
             return View();
         }

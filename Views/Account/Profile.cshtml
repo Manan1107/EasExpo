@@ -1,0 +1,54 @@
+@model EasExpo.Models.ViewModels.Account.AccountProfileViewModel
+@{
+    ViewData["Title"] = "Profile settings";
+}
+
+<h1 class="h3 mb-4">Profile settings</h1>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3 text-muted">Full name</dt>
+            <dd class="col-sm-9">@Model.FullName</dd>
+
+            <dt class="col-sm-3 text-muted">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3 text-muted">Company</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.CompanyName) ? Model.CompanyName : "—")</dd>
+
+            <dt class="col-sm-3 text-muted">Phone</dt>
+            <dd class="col-sm-9">@(!string.IsNullOrWhiteSpace(Model.PhoneNumber) ? Model.PhoneNumber : "—")</dd>
+
+            <dt class="col-sm-3 text-muted">Roles</dt>
+            <dd class="col-sm-9">
+                @if (Model.Roles != null && Model.Roles.Count > 0)
+                {
+                    <span class="badge badge-pill badge-primary mr-1">@string.Join("</span> <span class=\"badge badge-pill badge-primary mr-1\">", Model.Roles)</span>
+                }
+                else
+                {
+                    <span class="text-muted">—</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3 text-muted">Status</dt>
+            <dd class="col-sm-9">
+                @if (Model.IsActive)
+                {
+                    <span class="badge badge-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge badge-secondary">Inactive</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3 text-muted">Joined</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToString("dd MMM yyyy")</dd>
+        </dl>
+    </div>
+</div>
+
+<p class="text-muted">Need to update your profile? Reach out to the support team through the help &amp; support centre.</p>
+<a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Open help &amp; support</a>

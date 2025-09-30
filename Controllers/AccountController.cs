@@ -154,6 +154,32 @@ namespace EasExpo.Controllers
             return View(model);
         }
 
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var model = new AccountProfileViewModel
+            {
+                FullName = user.FullName,
+                Email = user.Email,
+                CompanyName = user.CompanyName,
+                PhoneNumber = user.PhoneNumber,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                Roles = roles.ToList()
+            };
+
+            return View(model);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()

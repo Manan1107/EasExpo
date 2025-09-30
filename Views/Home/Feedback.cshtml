@@ -1,0 +1,21 @@
+@using EasExpo.Models.Constants
+@{
+    ViewData["Title"] = "Share feedback";
+}
+
+<h1 class="h3 mb-4">Share your experience</h1>
+<p class="text-muted">We value your thoughts on the stalls you've booked. Completed a booking? Choose it from your history and leave detailed feedback for the stall owner.</p>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h5 class="card-title">How to leave feedback</h5>
+        <ol class="mb-0 pl-3">
+            <li>Open your booking history.</li>
+            <li>Select a completed booking and choose <strong>Leave feedback</strong>.</li>
+            <li>Share your rating and comments so owners can keep improving.</li>
+        </ol>
+    </div>
+</div>
+
+<a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-primary">Go to my bookings</a>
+<a asp-controller="Home" asp-action="Support" class="btn btn-link">Need help?</a>
