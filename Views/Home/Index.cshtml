@@ -8,18 +8,22 @@
     <p class="lead">EasExpo connects admins, stall owners, and customers in one streamlined platform for bookings, payments, and insights.</p>
     @if (User.Identity.IsAuthenticated)
     {
-        <a asp-controller="Stalls" asp-action="Index" class="btn btn-primary btn-lg mr-2">Browse stalls</a>
-        @if (User.IsInRole(RoleNames.Customer))
+        if (User.IsInRole(RoleNames.StallOwner))
         {
-            <a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-outline-primary btn-lg">My bookings</a>
-        }
-        else if (User.IsInRole(RoleNames.StallOwner))
-        {
-            <a asp-controller="StallOwner" asp-action="Dashboard" class="btn btn-outline-primary btn-lg">Owner dashboard</a>
+            <a asp-controller="StallOwner" asp-action="CreateStall" class="btn btn-primary btn-lg mr-2">Add stall</a>
+            <a asp-controller="StallOwner" asp-action="MyStalls" class="btn btn-outline-primary btn-lg">My stalls</a>
         }
         else if (User.IsInRole(RoleNames.Admin))
         {
             <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-primary btn-lg">Admin dashboard</a>
+        }
+        else
+        {
+            <a asp-controller="Stalls" asp-action="Index" class="btn btn-primary btn-lg mr-2">Browse stalls</a>
+            @if (User.IsInRole(RoleNames.Customer))
+            {
+                <a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-outline-primary btn-lg">My bookings</a>
+            }
         }
     }
     else

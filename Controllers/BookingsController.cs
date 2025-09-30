@@ -350,9 +350,16 @@ namespace EasExpo.Controllers
                 .Include(b => b.Stall)
                 .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == userId);
 
-            if (booking == null || booking.Status != BookingStatus.Approved || booking.PaymentStatus != PaymentStatus.Completed || booking.EndDate > DateTime.UtcNow.Date)
+            if (booking == null || booking.Status != BookingStatus.Approved || booking.PaymentStatus != PaymentStatus.Completed)
             {
-                TempData["Error"] = "Feedback can be submitted after the booking is completed.";
+                TempData["Error"] = "Feedback can be submitted after the booking payment is completed.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            var hasFeedback = await _context.Feedback.AnyAsync(f => f.BookingId == booking.Id);
+            if (hasFeedback)
+            {
+                TempData["Error"] = "Feedback already submitted for this booking.";
                 return RedirectToAction(nameof(MyBookings));
             }
 

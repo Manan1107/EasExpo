@@ -46,7 +46,7 @@ else
                         {
                             <a asp-action="Pay" asp-route-id="@booking.Id" class="btn btn-sm btn-primary">Pay now</a>
                         }
-                        @if (booking.Status == BookingStatus.Approved && booking.PaymentStatus == PaymentStatus.Completed && booking.EndDate <= DateTime.UtcNow.Date)
+                        @if (booking.Status == BookingStatus.Approved && booking.PaymentStatus == PaymentStatus.Completed)
                         {
                             <a asp-action="Feedback" asp-route-bookingId="@booking.Id" class="btn btn-sm btn-outline-secondary ml-2">Leave feedback</a>
                         }

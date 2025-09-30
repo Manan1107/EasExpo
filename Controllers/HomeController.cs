@@ -43,14 +43,14 @@ namespace EasExpo.Controllers
                 .Include(b => b.Stall)
                 .Where(b => b.CustomerId == userId
                     && b.Status == BookingStatus.Approved
-                    && b.PaymentStatus == PaymentStatus.Completed
-                    && b.EndDate <= DateTime.UtcNow.Date)
+                    && b.PaymentStatus == PaymentStatus.Completed)
+                .Where(b => !_context.Feedback.Any(f => f.BookingId == b.Id))
                 .OrderByDescending(b => b.EndDate)
                 .FirstOrDefaultAsync();
 
             if (booking == null)
             {
-                TempData["Error"] = "You need at least one completed booking before leaving feedback.";
+                TempData["Error"] = "You need at least one paid booking without feedback before leaving feedback.";
                 return RedirectToAction("MyBookings", "Bookings");
             }
 
