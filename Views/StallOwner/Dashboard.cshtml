@@ -1,15 +1,23 @@
 @model StallOwnerDashboardViewModel
+@using EasExpo.Models.Enums
 @{
     ViewData["Title"] = "Stall owner dashboard";
-}
+</div>
 
-<h1 class="mb-4">Owner dashboard</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">Owner dashboard</h1>
+        <p class="text-muted mb-0">Track stall performance, bookings, revenue and customer feedback at a glance.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="MyStalls">Manage my stalls</a>
+</div>
+
 <div class="row">
     <div class="col-md-3 col-sm-6 mb-4">
         <div class="card border-0 shadow-sm h-100 text-center">
             <div class="card-body">
                 <h6 class="text-muted text-uppercase">My stalls</h6>
-                <h2 class="h2 mb-0">@Model.MyStallCount</h2>
+                <div class="display-4">@Model.MyStallCount</div>
             </div>
         </div>
     </div>
@@ -17,7 +25,7 @@
         <div class="card border-0 shadow-sm h-100 text-center">
             <div class="card-body">
                 <h6 class="text-muted text-uppercase">Pending bookings</h6>
-                <h2 class="h2 mb-0">@Model.PendingBookings</h2>
+                <div class="display-4">@Model.PendingBookings</div>
             </div>
         </div>
     </div>
@@ -25,7 +33,7 @@
         <div class="card border-0 shadow-sm h-100 text-center">
             <div class="card-body">
                 <h6 class="text-muted text-uppercase">Upcoming bookings</h6>
-                <h2 class="h2 mb-0">@Model.UpcomingBookings</h2>
+                <div class="display-4">@Model.UpcomingBookings</div>
             </div>
         </div>
     </div>
@@ -33,174 +41,153 @@
         <div class="card border-0 shadow-sm h-100 text-center">
             <div class="card-body">
                 <h6 class="text-muted text-uppercase">Total revenue</h6>
-                <h2 class="h2 mb-0">₹@Model.TotalRevenue.ToString("N2")</h2>
+                <div class="display-4">₹@Model.TotalRevenue.ToString("N0")</div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h4 mb-0">My stalls</h2>
-    <a class="btn btn-sm btn-outline-primary" asp-action="MyStalls">Manage stalls</a>
-</div>
-
-@if (!Model.StallSummaries.Any())
-{
-    <div class="alert alert-info">You haven't added any stalls yet. Add your first stall to start receiving bookings.</div>
-}
-else
-{
-    <div class="row">
-        @foreach (var stall in Model.StallSummaries)
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Stall performance</h2>
+        <small class="text-muted">Detailed overview of every stall you manage</small>
+    </div>
+    <div class="card-body">
+        @if (!Model.StallSummaries.Any())
         {
-            <div class="col-lg-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <h5 class="mb-1">@stall.Name</h5>
-                                <small class="text-muted">@stall.Location @if (!string.IsNullOrWhiteSpace(stall.Size)){ <text>• @stall.Size</text> }</small>
-                            </div>
-                            <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">
-                                @stall.Status
-                            </span>
-                        </div>
-                        <div class="row text-center mb-3">
-                            <div class="col-4">
-                                <div class="text-muted small text-uppercase">Bookings</div>
-                                <div class="font-weight-bold">@stall.TotalBookings</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="text-muted small text-uppercase">Pending</div>
-                                <div class="font-weight-bold">@stall.PendingRequests</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="text-muted small text-uppercase">Revenue</div>
-                                <div class="font-weight-bold">₹@stall.TotalRevenue.ToString("N0")</div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="text-muted small text-uppercase mb-1">Next booking</div>
-                            @if (stall.NextBooking == null)
-                            {
-                                <span class="badge badge-light">No approved bookings scheduled</span>
-                            }
-                            else
-                            {
-                                <div class="d-flex justify-content-between align-items-center bg-light rounded px-3 py-2">
-                                    <div>
-                                        <div class="font-weight-bold">@stall.NextBooking.CustomerName</div>
-                                        <small class="text-muted">@stall.NextBooking.StartDate.ToString("dd MMM") - @stall.NextBooking.EndDate.ToString("dd MMM yyyy")</small>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="badge badge-pill @(stall.NextBooking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : stall.NextBooking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
-                                            @stall.NextBooking.PaymentStatus
-                                        </span>
-                                        <div class="small text-muted">₹@stall.NextBooking.Amount.ToString("N0")</div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">Rent/day: ₹@stall.RentPerDay.ToString("N0")</small>
+            <div class="alert alert-light mb-0">You haven’t created any stalls yet. Add one to start receiving bookings.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Stall</th>
+                            <th>Status</th>
+                            <th>Bookings</th>
+                            <th>Pending</th>
+                            <th>Revenue</th>
+                            <th>Rating</th>
+                            <th>Next booking</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var stall in Model.StallSummaries)
+                    {
+                        <tr>
+                            <td>
+                                <div class="font-weight-semibold">@stall.Name</div>
+                                <div class="small text-muted">@stall.Location@if(!string.IsNullOrWhiteSpace(stall.Size)){<text> • @stall.Size</text>}</div>
+                            </td>
+                            <td>
+                                <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">@stall.Status</span>
+                            </td>
+                            <td>@stall.TotalBookings</td>
+                            <td>@stall.PendingRequests</td>
+                            <td>₹@stall.TotalRevenue.ToString("N0")</td>
+                            <td>
                                 @if (stall.AverageRating.HasValue)
                                 {
-                                    <div class="small text-muted">Rating: @stall.AverageRating.Value.ToString("0.0") ⭐ (@stall.ReviewCount)</div>
+                                    <span class="badge badge-warning badge-pill">⭐ @stall.AverageRating.Value.ToString("0.0")</span>
+                                    <div class="small text-muted">@stall.ReviewCount reviews</div>
                                 }
-                            </div>
-                            <a class="btn btn-sm btn-outline-secondary" asp-action="StallDetails" asp-route-id="@stall.StallId">View details</a>
-                        </div>
-                    </div>
-                </div>
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (stall.NextBooking == null)
+                                {
+                                    <span class="text-muted small">No upcoming booking</span>
+                                }
+                                else
+                                {
+                                    <div class="small font-weight-semibold">@stall.NextBooking.CustomerName</div>
+                                    <div class="small text-muted">@stall.NextBooking.StartDate.ToString("dd MMM") - @stall.NextBooking.EndDate.ToString("dd MMM yyyy")</div>
+                                    <span class="badge badge-pill @(stall.NextBooking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : stall.NextBooking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
+                                        @stall.NextBooking.PaymentStatus
+                                    </span>
+                                }
+                            </td>
+                            <td class="text-right">
+                                <a class="btn btn-sm btn-outline-primary" asp-action="StallDetails" asp-route-id="@stall.StallId">View details</a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
             </div>
         }
     </div>
-}
+</div>
 
 <div class="row">
-    <div class="col-lg-7 mb-4">
+    <div class="col-lg-6 mb-4">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
                 <h2 class="h5 mb-0">Upcoming bookings</h2>
-                <a asp-action="Bookings" class="btn btn-sm btn-link">View all</a>
+                <a asp-action="Bookings" class="btn btn-sm btn-link">Manage bookings</a>
             </div>
             <div class="card-body">
                 @if (!Model.UpcomingBookingDetails.Any())
                 {
-                    <div class="alert alert-light mb-0">No approved bookings coming up.</div>
+                    <div class="alert alert-light mb-0">No upcoming bookings scheduled. Approve pending requests to fill your calendar.</div>
                 }
                 else
                 {
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>Stall</th>
-                                    <th>Customer</th>
-                                    <th>Dates</th>
-                                    <th>Payment</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var booking in Model.UpcomingBookingDetails)
+                    <div class="list-group list-group-flush">
+                        @foreach (var booking in Model.UpcomingBookingDetails)
+                        {
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <div class="font-weight-semibold">@booking.CustomerName</div>
+                                        <div class="small text-muted">@booking.StallName</div>
+                                    </div>
+                                    <span class="badge badge-pill @(booking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : booking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">@booking.PaymentStatus</span>
+                                </div>
+                                <div class="small text-muted mt-2">@booking.StartDate.ToString("dd MMM") - @booking.EndDate.ToString("dd MMM yyyy") · ₹@booking.Amount.ToString("N0")</div>
+                                @if (!string.IsNullOrWhiteSpace(booking.PaymentReference))
                                 {
-                                    <tr>
-                                        <td>@booking.StallName</td>
-                                        <td>@booking.CustomerName</td>
-                                        <td>@booking.StartDate.ToString("dd MMM") - @booking.EndDate.ToString("dd MMM yyyy")</td>
-                                        <td>
-                                            <div>
-                                                <span class="badge badge-pill @(booking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : booking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
-                                                    @booking.PaymentStatus
-                                                </span>
-                                            </div>
-                                            <small class="text-muted">₹@booking.Amount.ToString("N0")</small>
-                                            @if (!string.IsNullOrWhiteSpace(booking.PaymentReference))
-                                            {
-                                                <div><small class="text-muted">Ref: @booking.PaymentReference</small></div>
-                                            }
-                                        </td>
-                                    </tr>
+                                    <div class="small text-muted">Reference: @booking.PaymentReference</div>
                                 }
-                            </tbody>
-                        </table>
+                            </div>
+                        }
                     </div>
                 }
             </div>
         </div>
     </div>
-    <div class="col-lg-5 mb-4">
+    <div class="col-lg-6 mb-4">
         <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-                <h2 class="h5 mb-0">Latest feedback</h2>
-                <a asp-action="Feedback" class="btn btn-sm btn-link">See all</a>
+            <div class="card-header bg-white border-0">
+                <h2 class="h5 mb-0">Recent feedback</h2>
             </div>
             <div class="card-body">
                 @if (!Model.RecentFeedback.Any())
                 {
-                    <div class="alert alert-light mb-0">No feedback received yet.</div>
+                    <div class="alert alert-light mb-0">No feedback received yet. Encourage customers to share their experience after each event.</div>
                 }
                 else
                 {
                     <div class="list-group list-group-flush">
-                        @foreach (var review in Model.RecentFeedback)
+                        @foreach (var feedback in Model.RecentFeedback)
                         {
                             <div class="list-group-item px-0">
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <strong>@review.StallName</strong>
-                                        <div class="small text-muted">@review.CustomerName</div>
+                                        <div class="font-weight-semibold">@feedback.CustomerName</div>
+                                        <div class="small text-muted">@feedback.StallName · @feedback.SubmittedAt.ToString("dd MMM yyyy")</div>
                                     </div>
-                                    <span class="badge badge-pill badge-warning align-self-start">
-                                        ⭐ @review.Rating
-                                    </span>
+                                    <span class="badge badge-pill badge-warning">⭐ @feedback.Rating</span>
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(review.Comments))
+                                @if (!string.IsNullOrWhiteSpace(feedback.Comments))
                                 {
-                                    <p class="mb-1 small">@review.Comments</p>
+                                    <p class="mb-1">@feedback.Comments</p>
                                 }
-                                <small class="text-muted">@review.SubmittedAt.ToString("dd MMM yyyy")</small>
                             </div>
                         }
                     </div>

@@ -1,10 +1,13 @@
-@model IEnumerable<Stall>
+@model IEnumerable<OwnerStallSummaryViewModel>
 @{
     ViewData["Title"] = "My stalls";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h3">My stalls</h1>
+    <div>
+        <h1 class="h3 mb-1">My stalls</h1>
+        <p class="text-muted mb-0">Review performance, manage availability, and dive into detailed insights for each stall.</p>
+    </div>
     <a class="btn btn-primary" asp-action="CreateStall">Add stall</a>
 </div>
 
@@ -14,39 +17,56 @@
 }
 else
 {
-    <table class="table table-striped table-hover">
-        <thead class="thead-light">
-            <tr>
-                <th>Name</th>
-                <th>Location</th>
-                <th>Size</th>
-                <th>Rent/day</th>
-                <th>Status</th>
-                <th class="text-right">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var stall in Model)
-        {
-            <tr>
-                <td>@stall.Name</td>
-                <td>@stall.Location</td>
-                <td>@stall.Size</td>
-                <td>₹@stall.RentPerDay.ToString("N2")</td>
-                <td>
-                    <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">
-                        @stall.Status
-                    </span>
-                </td>
-                <td class="text-right">
-                    <a asp-action="StallDetails" asp-route-id="@stall.Id" class="btn btn-sm btn-outline-primary mr-1">Details</a>
-                    <a asp-action="EditStall" asp-route-id="@stall.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                    <form asp-action="DeleteStall" asp-route-id="@stall.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this stall?');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                    </form>
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="thead-light">
+                <tr>
+                    <th>Stall</th>
+                    <th>Status</th>
+                    <th>Bookings</th>
+                    <th>Revenue</th>
+                    <th>Rating</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var stall in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="font-weight-semibold">@stall.Name</div>
+                        <div class="small text-muted">@stall.Location@if(!string.IsNullOrWhiteSpace(stall.Size)){<text> • @stall.Size</text>}</div>
+                        <div class="small text-muted">Rent/day: ₹@stall.RentPerDay.ToString("N0")</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">@stall.Status</span>
+                    </td>
+                    <td>
+                        <div>@stall.TotalBookings total</div>
+                        <div class="small text-muted">@stall.PendingRequests pending</div>
+                    </td>
+                    <td>₹@stall.TotalRevenue.ToString("N0")</td>
+                    <td>
+                        @if (stall.AverageRating.HasValue)
+                        {
+                            <span class="badge badge-warning badge-pill">⭐ @stall.AverageRating.Value.ToString("0.0")</span>
+                            <div class="small text-muted">@stall.ReviewCount reviews</div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No reviews yet</span>
+                        }
+                    </td>
+                    <td class="text-right">
+                        <a asp-action="StallDetails" asp-route-id="@stall.StallId" class="btn btn-sm btn-outline-primary mr-1">View</a>
+                        <a asp-action="EditStall" asp-route-id="@stall.StallId" class="btn btn-sm btn-outline-secondary mr-1">Edit</a>
+                        <form asp-action="DeleteStall" asp-route-id="@stall.StallId" method="post" class="d-inline" onsubmit="return confirm('Delete this stall?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
 }

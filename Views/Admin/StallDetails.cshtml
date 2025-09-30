@@ -1,0 +1,230 @@
+@model AdminStallDetailViewModel
+@{
+    ViewData["Title"] = $"Stall insights • {Model.Name}";
+}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <a asp-action="Stalls" class="btn btn-link px-0 mb-3">
+            <span aria-hidden="true">&larr;</span> Back to stalls
+        </a>
+        <h1 class="h3 mb-1">@Model.Name</h1>
+        <div class="text-muted">
+            @Model.Location
+            @if (!string.IsNullOrWhiteSpace(Model.Size))
+            {
+                <text> &bull; @Model.Size</text>
+            }
+        </div>
+    </div>
+    <div class="text-right">
+        <span class="badge badge-pill @(Model.Status == StallStatus.Available ? "badge-success" : Model.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">
+            @Model.Status
+        </span>
+        <div class="mt-2">
+            <a asp-action="EditStall" asp-route-id="@Model.StallId" class="btn btn-sm btn-outline-primary">Edit stall</a>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small text-uppercase">Total bookings</div>
+                <div class="h2 mb-0">@Model.TotalBookings</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small text-uppercase">Pending requests</div>
+                <div class="h2 mb-0">@Model.PendingRequests</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small text-uppercase">Revenue</div>
+                <div class="h2 mb-0">₹@Model.TotalRevenue.ToString("N2")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3 mb-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-muted small text-uppercase">Average rating</div>
+                @if (Model.AverageRating.HasValue)
+                {
+                    <div class="h2 mb-0">⭐ @Model.AverageRating.Value.ToString("0.0")</div>
+                    <div class="small text-muted">@Model.ReviewCount review@(Model.ReviewCount == 1 ? string.Empty : "s")</div>
+                }
+                else
+                {
+                    <div class="h2 mb-0 text-muted">–</div>
+                    <div class="small text-muted">No reviews yet</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Stall overview</h2>
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p class="mb-4">@Model.Description</p>
+                }
+                <div class="row text-center">
+                    <div class="col-sm-4 mb-3 mb-sm-0">
+                        <div class="text-muted small text-uppercase">Rent/day</div>
+                        <div class="h3 mb-0">₹@Model.RentPerDay.ToString("N2")</div>
+                    </div>
+                    <div class="col-sm-4 mb-3 mb-sm-0">
+                        <div class="text-muted small text-uppercase">Created</div>
+                        <div class="h3 mb-0">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-muted small text-uppercase">Updated</div>
+                        <div class="h3 mb-0">@(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd MMM yyyy") : "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Owner contact</h2>
+                @if (string.IsNullOrWhiteSpace(Model.OwnerName))
+                {
+                    <div class="alert alert-light mb-0">No owner assigned.</div>
+                }
+                else
+                {
+                    <div class="mb-2">
+                        <strong>@Model.OwnerName</strong>
+                        @if (!string.IsNullOrWhiteSpace(Model.OwnerCompany))
+                        {
+                            <div class="small text-muted">@Model.OwnerCompany</div>
+                        }
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.OwnerEmail))
+                    {
+                        <div class="small"><span class="text-muted">Email:</span> @Model.OwnerEmail</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.OwnerPhone))
+                    {
+                        <div class="small"><span class="text-muted">Phone:</span> @Model.OwnerPhone</div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Booking history</h2>
+    </div>
+    <div class="card-body">
+        @if (Model.BookingHistory == null || !Model.BookingHistory.Any())
+        {
+            <div class="alert alert-light mb-0">No bookings recorded for this stall yet.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Customer</th>
+                            <th>Dates</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var booking in Model.BookingHistory)
+                        {
+                            <tr>
+                                <td>
+                                    <div>@booking.CustomerName</div>
+                                    <div class="small text-muted">@booking.CustomerEmail</div>
+                                </td>
+                                <td>
+                                    <div>@booking.StartDate.ToString("dd MMM yyyy")</div>
+                                    <div class="small text-muted">to @booking.EndDate.ToString("dd MMM yyyy")</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-pill @(booking.Status == BookingStatus.Approved ? "badge-success" : booking.Status == BookingStatus.Pending ? "badge-warning" : booking.Status == BookingStatus.Rejected ? "badge-danger" : "badge-secondary")">
+                                        @booking.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <span class="badge badge-pill @(booking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : booking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
+                                            @booking.PaymentStatus
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted">Invoice: ₹@booking.Amount.ToString("N2")</div>
+                                    @if (booking.PaymentAmount.HasValue)
+                                    {
+                                        <div class="small text-muted">Paid: ₹@booking.PaymentAmount.Value.ToString("N2")</div>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(booking.PaymentReference))
+                                    {
+                                        <div class="small text-muted">Ref: @booking.PaymentReference</div>
+                                    }
+                                    @if (booking.PaymentDate.HasValue)
+                                    {
+                                        <div class="small text-muted">@booking.PaymentDate.Value.ToString("dd MMM yyyy") via @booking.PaymentProvider</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Customer feedback</h2>
+        <span class="badge badge-light">@Model.ReviewCount</span>
+    </div>
+    <div class="card-body">
+        @if (Model.Feedback == null || !Model.Feedback.Any())
+        {
+            <div class="alert alert-light mb-0">No feedback submitted for this stall.</div>
+        }
+        else
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var review in Model.Feedback)
+                {
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>@review.CustomerName</strong>
+                                <div class="small text-muted">@review.SubmittedAt.ToString("dd MMM yyyy")</div>
+                            </div>
+                            <span class="badge badge-pill badge-warning align-self-start">⭐ @review.Rating</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(review.Comments))
+                        {
+                            <p class="mb-1">@review.Comments</p>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

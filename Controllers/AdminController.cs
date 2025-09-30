@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EasExpo.Models;
@@ -6,6 +7,7 @@ using EasExpo.Models.Constants;
 using EasExpo.Models.Enums;
 using EasExpo.Models.ViewModels.Admin;
 using EasExpo.Models.ViewModels.Stalls;
+using EasExpo.Models.ViewModels.StallOwner;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -252,6 +254,123 @@ namespace EasExpo.Controllers
             return View(stalls);
         }
 
+        public async Task<IActionResult> StallDetails(int id)
+        {
+            var stall = await _context.Stalls
+                .Include(s => s.Owner)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (stall == null)
+            {
+                return NotFound();
+            }
+
+            var bookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Where(b => b.StallId == stall.Id)
+                .OrderByDescending(b => b.StartDate)
+                .ToListAsync();
+
+            var bookingIds = bookings.Select(b => b.Id).ToArray();
+            var bookingById = bookings.ToDictionary(b => b.Id);
+
+            var payments = bookingIds.Length > 0
+                ? await _context.Payments
+                    .Where(p => bookingIds.Contains(p.BookingId))
+                    .OrderByDescending(p => p.ProcessedAt)
+                    .ToListAsync()
+                : new List<Payment>();
+
+            var feedbackEntries = bookingIds.Length > 0
+                ? await _context.Feedback
+                    .Where(f => bookingIds.Contains(f.BookingId))
+                    .OrderByDescending(f => f.SubmittedAt)
+                    .ToListAsync()
+                : new List<Feedback>();
+
+            var paymentLookup = payments
+                .GroupBy(p => p.BookingId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g
+                        .OrderByDescending(p => p.Status == PaymentStatus.Completed)
+                        .ThenByDescending(p => p.ProcessedAt)
+                        .ToList());
+
+            var bookingHistory = bookings.Select(b =>
+            {
+                paymentLookup.TryGetValue(b.Id, out var bookingPayments);
+                var paymentList = bookingPayments ?? new List<Payment>();
+                var completedPayment = paymentList.FirstOrDefault(p => p.Status == PaymentStatus.Completed);
+                var preferredPayment = completedPayment ?? paymentList.FirstOrDefault();
+
+                return new AdminStallBookingDetailViewModel
+                {
+                    BookingId = b.Id,
+                    CustomerName = b.Customer?.FullName ?? "-",
+                    CustomerEmail = b.Customer?.Email,
+                    StartDate = b.StartDate,
+                    EndDate = b.EndDate,
+                    Status = b.Status,
+                    PaymentStatus = b.PaymentStatus,
+                    Amount = CalculateAmount(b.StartDate, b.EndDate, stall.RentPerDay),
+                    PaymentReference = preferredPayment?.TransactionReference,
+                    PaymentDate = preferredPayment?.ProcessedAt,
+                    PaymentAmount = preferredPayment?.Amount,
+                    PaymentProvider = preferredPayment?.Provider
+                };
+            }).ToList();
+
+            var totalRevenue = payments
+                .Where(p => p.Status == PaymentStatus.Completed)
+                .Sum(p => p.Amount);
+
+            var averageRating = feedbackEntries.Any()
+                ? Math.Round(feedbackEntries.Average(f => f.Rating), 1)
+                : (double?)null;
+
+            var feedbackModels = feedbackEntries
+                .Select(f =>
+                {
+                    bookingById.TryGetValue(f.BookingId, out var booking);
+                    return new OwnerFeedbackViewModel
+                    {
+                        StallName = stall.Name,
+                        CustomerName = booking?.Customer?.FullName ?? "-",
+                        Rating = f.Rating,
+                        Comments = f.Comments,
+                        SubmittedAt = f.SubmittedAt
+                    };
+                })
+                .ToList();
+
+            var model = new AdminStallDetailViewModel
+            {
+                StallId = stall.Id,
+                Name = stall.Name,
+                Location = stall.Location,
+                Size = stall.Size,
+                Description = stall.Description,
+                RentPerDay = stall.RentPerDay,
+                Status = stall.Status,
+                CreatedAt = stall.CreatedAt,
+                UpdatedAt = stall.UpdatedAt,
+                OwnerName = stall.Owner?.FullName,
+                OwnerEmail = stall.Owner?.Email,
+                OwnerPhone = stall.Owner?.PhoneNumber,
+                OwnerCompany = stall.Owner?.CompanyName,
+                TotalBookings = bookings.Count,
+                PendingRequests = bookings.Count(b => b.Status == BookingStatus.Pending),
+                TotalRevenue = decimal.Round(totalRevenue, 2, MidpointRounding.AwayFromZero),
+                AverageRating = averageRating,
+                ReviewCount = feedbackEntries.Count,
+                BookingHistory = bookingHistory,
+                Feedback = feedbackModels
+            };
+
+            return View(model);
+        }
+
         [HttpGet]
         public async Task<IActionResult> CreateStall()
         {
@@ -384,6 +503,18 @@ namespace EasExpo.Controllers
 
             TempData["Success"] = "Stall deleted.";
             return RedirectToAction(nameof(Stalls));
+        }
+
+        private static decimal CalculateAmount(DateTime start, DateTime end, decimal rentPerDay)
+        {
+            var totalDays = (end.Date - start.Date).TotalDays;
+            if (totalDays < 1)
+            {
+                totalDays = 1;
+            }
+
+            var amount = rentPerDay * (decimal)totalDays;
+            return decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
         }
 
         public async Task<IActionResult> OwnerApplications()

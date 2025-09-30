@@ -82,7 +82,7 @@
                         @if (User.IsInRole(RoleNames.Admin))
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle text-dark @(IsActive("Admin") ? "active" : string.Empty)" href="#" id="adminDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Admin
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="adminDropdown">
@@ -97,7 +97,7 @@
                         @if (User.IsInRole(RoleNames.StallOwner))
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="ownerDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle text-dark @(IsActive("StallOwner") ? "active" : string.Empty)" href="#" id="ownerDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     Stall owner
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="ownerDropdown">
