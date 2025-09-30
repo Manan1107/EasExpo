@@ -5,6 +5,9 @@ namespace EasExpo.Models.ViewModels.Bookings
     public class PaymentCheckoutViewModel
     {
         public int BookingId { get; set; }
+        public int StallId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
         public string StallName { get; set; }
         public decimal Amount { get; set; }
         public string Currency { get; set; } = "INR";

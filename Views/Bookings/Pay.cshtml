@@ -1,6 +1,8 @@
 @model PaymentCheckoutViewModel
 @{
     ViewData["Title"] = "Payment";
+    var days = (Model.EndDate.Date - Model.StartDate.Date).Days + 1;
+    var rentPerDay = days > 0 ? Model.Amount / days : Model.Amount;
 }
 
 <h1 class="h3 mb-3">Complete payment</h1>
@@ -9,6 +11,20 @@
         <p class="mb-1 text-muted">Stall</p>
         <h4>@Model.StallName</h4>
         <p class="mb-3">Amount due: <strong>₹@Model.Amount.ToString("N2")</strong></p>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label class="text-muted">Start date</label>
+                <div class="form-control-plaintext font-weight-semibold">@Model.StartDate.ToString("dd MMM yyyy")</div>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="text-muted">End date</label>
+                <div class="form-control-plaintext font-weight-semibold">@Model.EndDate.ToString("dd MMM yyyy")</div>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="text-muted">Rent per day</label>
+                <div class="form-control-plaintext font-weight-semibold">₹@rentPerDay.ToString("N2")</div>
+            </div>
+        </div>
         <p class="text-muted">You'll be redirected to Razorpay's secure checkout to complete this payment.</p>
 
         <div id="payment-error" class="alert alert-danger d-none" role="alert"></div>

@@ -43,7 +43,7 @@ namespace EasExpo.Controllers
         public async Task<IActionResult> Book(int stallId)
         {
             var stall = await _context.Stalls.FindAsync(stallId);
-            if (stall == null || stall.Status == StallStatus.Maintenance)
+            if (stall == null || stall.Status == StallStatus.Maintenance || stall.Status == StallStatus.Booked)
             {
                 return NotFound();
             }
@@ -88,7 +88,7 @@ namespace EasExpo.Controllers
             }
 
             var hasOverlap = await _context.Bookings
-                .Where(b => b.StallId == model.StallId && b.Status != BookingStatus.Rejected)
+                .Where(b => b.StallId == model.StallId && b.Status != BookingStatus.Rejected && b.Status != BookingStatus.Cancelled)
                 .AnyAsync(b => model.StartDate <= b.EndDate && model.EndDate >= b.StartDate);
 
             if (hasOverlap)
@@ -110,16 +110,15 @@ namespace EasExpo.Controllers
                 CustomerId = userId,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
-                Status = BookingStatus.Pending,
+                Status = BookingStatus.Approved,
                 PaymentStatus = PaymentStatus.Pending
             };
 
             _context.Bookings.Add(booking);
-            stall.Status = StallStatus.Booked;
+            stall.Status = StallStatus.Maintenance;
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Booking request submitted. Please await owner approval.";
-            return RedirectToAction(nameof(MyBookings));
+            return RedirectToAction(nameof(Pay), new { id = booking.Id });
         }
 
         public async Task<IActionResult> MyBookings()
@@ -157,9 +156,9 @@ namespace EasExpo.Controllers
                 return NotFound();
             }
 
-            if (booking.Status != BookingStatus.Approved)
+            if (booking.Status == BookingStatus.Rejected || booking.Status == BookingStatus.Cancelled)
             {
-                TempData["Error"] = "Payments can be made once the booking has been approved by the stall owner.";
+                TempData["Error"] = "This booking isn't eligible for payment.";
                 return RedirectToAction(nameof(MyBookings));
             }
 
@@ -213,8 +212,11 @@ namespace EasExpo.Controllers
                 var model = new PaymentCheckoutViewModel
                 {
                     BookingId = booking.Id,
+                    StallId = booking.StallId,
                     StallName = booking.Stall.Name,
                     Amount = amount,
+                    StartDate = booking.StartDate,
+                    EndDate = booking.EndDate,
                     Currency = order.Currency,
                     RazorpayOrderId = order.OrderId,
                     RazorpayKey = _razorpayOptions.KeyId,
@@ -252,12 +254,6 @@ namespace EasExpo.Controllers
             if (booking == null)
             {
                 return NotFound();
-            }
-
-            if (booking.Status != BookingStatus.Approved)
-            {
-                TempData["Error"] = "The booking is not approved yet.";
-                return RedirectToAction(nameof(MyBookings));
             }
 
             if (booking.PaymentStatus == PaymentStatus.Completed)
@@ -298,7 +294,13 @@ namespace EasExpo.Controllers
                 _logger.LogError(ex, "Failed to verify Razorpay signature for booking {BookingId}", booking.Id);
                 payment.Status = PaymentStatus.Failed;
                 payment.ProcessedAt = DateTime.UtcNow;
-                booking.PaymentStatus = PaymentStatus.Pending;
+                booking.PaymentStatus = PaymentStatus.Failed;
+                booking.Status = BookingStatus.Cancelled;
+                if (booking.Stall != null)
+                {
+                    booking.Stall.Status = StallStatus.Available;
+                }
+                booking.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 TempData["Error"] = "We couldn't verify the payment signature. Please contact support if you were charged.";
@@ -309,7 +311,13 @@ namespace EasExpo.Controllers
             {
                 payment.Status = PaymentStatus.Failed;
                 payment.ProcessedAt = DateTime.UtcNow;
-                booking.PaymentStatus = PaymentStatus.Pending;
+                booking.PaymentStatus = PaymentStatus.Failed;
+                booking.Status = BookingStatus.Cancelled;
+                if (booking.Stall != null)
+                {
+                    booking.Stall.Status = StallStatus.Available;
+                }
+                booking.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
                 TempData["Error"] = "Payment verification failed. No charges were captured.";
@@ -321,6 +329,11 @@ namespace EasExpo.Controllers
             payment.ProcessedAt = DateTime.UtcNow;
             payment.Provider = $"Razorpay (Order: {model.RazorpayOrderId})";
             booking.PaymentStatus = PaymentStatus.Completed;
+            booking.Status = BookingStatus.Approved;
+            if (booking.Stall != null)
+            {
+                booking.Stall.Status = StallStatus.Booked;
+            }
             booking.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
