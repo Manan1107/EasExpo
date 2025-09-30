@@ -12,8 +12,8 @@ namespace EasExpo.Models
 
         public Booking Booking { get; set; }
 
-        [Range(1, 5)]
-        public int Rating { get; set; }
+    [Range(1, 5)]
+    public int? Rating { get; set; }
 
         [MaxLength(500)]
         public string Comments { get; set; }

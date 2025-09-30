@@ -371,6 +371,7 @@ namespace EasExpo.Controllers
         {
             var userId = _userManager.GetUserId(User);
             var booking = await _context.Bookings
+                .Include(b => b.Stall)
                 .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.CustomerId == userId);
 
             if (booking == null)
@@ -380,6 +381,7 @@ namespace EasExpo.Controllers
 
             if (!ModelState.IsValid)
             {
+                model.StallName = booking.Stall?.Name;
                 return View(model);
             }
 
@@ -393,7 +395,7 @@ namespace EasExpo.Controllers
             var feedback = new Feedback
             {
                 BookingId = booking.Id,
-                Rating = model.Rating,
+                Rating = null,
                 Comments = model.Comments
             };
 

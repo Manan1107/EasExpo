@@ -326,8 +326,13 @@ namespace EasExpo.Controllers
                 .Where(p => p.Status == PaymentStatus.Completed)
                 .Sum(p => p.Amount);
 
-            var averageRating = feedbackEntries.Any()
-                ? Math.Round(feedbackEntries.Average(f => f.Rating), 1)
+            var ratingValues = feedbackEntries
+                .Where(f => f.Rating.HasValue)
+                .Select(f => (double)f.Rating.Value)
+                .ToList();
+
+            var averageRating = ratingValues.Any()
+                ? Math.Round(ratingValues.Average(), 1)
                 : (double?)null;
 
             var feedbackModels = feedbackEntries

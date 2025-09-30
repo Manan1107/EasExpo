@@ -7,12 +7,9 @@ namespace EasExpo.Models.ViewModels.Bookings
         public int BookingId { get; set; }
         public string StallName { get; set; }
 
-        [Range(1, 5)]
-        [Display(Name = "Rating (1-5)")]
-        public int Rating { get; set; }
-
-        [MaxLength(500)]
-        [Display(Name = "Comments")]
-        public string Comments { get; set; }
+    [Required]
+    [MaxLength(500)]
+    [Display(Name = "Feedback")]
+    public string Comments { get; set; }
     }
 }

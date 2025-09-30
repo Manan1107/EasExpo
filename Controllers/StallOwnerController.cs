@@ -262,9 +262,14 @@ namespace EasExpo.Controllers
             }
 
             double? averageRating = null;
-            if (feedbackEntries.Any())
+            var feedbackRatings = feedbackEntries
+                .Where(f => f.Rating.HasValue)
+                .Select(f => (double)f.Rating.Value)
+                .ToList();
+
+            if (feedbackRatings.Any())
             {
-                averageRating = Math.Round(feedbackEntries.Average(f => f.Rating), 1);
+                averageRating = Math.Round(feedbackRatings.Average(), 1);
             }
 
             var stallRevenue = payments.Where(p => p.Status == PaymentStatus.Completed).Sum(p => p.Amount);
@@ -440,9 +445,14 @@ namespace EasExpo.Controllers
                 }
 
                 double? averageRating = null;
-                if (stallReviews.Any())
+                var reviewRatings = stallReviews
+                    .Where(r => r.Rating.HasValue)
+                    .Select(r => (double)r.Rating.Value)
+                    .ToList();
+
+                if (reviewRatings.Any())
                 {
-                    averageRating = Math.Round(stallReviews.Average(r => r.Rating), 1);
+                    averageRating = Math.Round(reviewRatings.Average(), 1);
                 }
 
                 var stallRevenue = revenueByStall.TryGetValue(stall.Id, out var revenue)

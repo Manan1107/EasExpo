@@ -1,12 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using EasExpo.Models;
 using EasExpo.Models.Constants;
+using EasExpo.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace EasExpo.Controllers
@@ -14,10 +16,17 @@ namespace EasExpo.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly EasExpoDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(
+            ILogger<HomeController> logger,
+            EasExpoDbContext context,
+            UserManager<ApplicationUser> userManager)
         {
             _logger = logger;
+            _context = context;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -26,9 +35,26 @@ namespace EasExpo.Controllers
         }
 
         [Authorize(Roles = RoleNames.Customer)]
-        public IActionResult Feedback()
+        public async Task<IActionResult> Feedback()
         {
-            return View();
+            var userId = _userManager.GetUserId(User);
+
+            var booking = await _context.Bookings
+                .Include(b => b.Stall)
+                .Where(b => b.CustomerId == userId
+                    && b.Status == BookingStatus.Approved
+                    && b.PaymentStatus == PaymentStatus.Completed
+                    && b.EndDate <= DateTime.UtcNow.Date)
+                .OrderByDescending(b => b.EndDate)
+                .FirstOrDefaultAsync();
+
+            if (booking == null)
+            {
+                TempData["Error"] = "You need at least one completed booking before leaving feedback.";
+                return RedirectToAction("MyBookings", "Bookings");
+            }
+
+            return RedirectToAction("Feedback", "Bookings", new { bookingId = booking.Id });
         }
 
         [Authorize(Roles = RoleNames.Customer)]

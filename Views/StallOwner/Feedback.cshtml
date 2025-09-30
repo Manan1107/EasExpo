@@ -20,7 +20,13 @@ else
                 <small class="text-muted">@feedback.SubmittedAt.ToLocalTime().ToString("dd MMM yyyy")</small>
             </div>
             <p class="mb-1">@feedback.Comments</p>
-            <small class="text-muted">@feedback.CustomerName · Rating: @feedback.Rating/5</small>
+            <small class="text-muted">
+                @feedback.CustomerName
+                @if (feedback.Rating.HasValue)
+                {
+                    <text> · Rating: @feedback.Rating/5</text>
+                }
+            </small>
         </div>
     }
     </div>
