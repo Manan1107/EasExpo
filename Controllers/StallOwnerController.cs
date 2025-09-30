@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EasExpo.Models;
@@ -27,30 +28,132 @@ namespace EasExpo.Controllers
         public async Task<IActionResult> Dashboard()
         {
             var userId = _userManager.GetUserId(User);
+            var today = DateTime.UtcNow.Date;
 
-            var myStalls = await _context.Stalls.CountAsync(s => s.OwnerId == userId);
-            var pendingBookings = await _context.Bookings
-                .Include(b => b.Stall)
-                .Where(b => b.Stall.OwnerId == userId && b.Status == BookingStatus.Pending)
-                .CountAsync();
+            var stalls = await _context.Stalls
+                .Where(s => s.OwnerId == userId)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
 
-            var upcomingBookings = await _context.Bookings
-                .Include(b => b.Stall)
-                .Where(b => b.Stall.OwnerId == userId && b.Status == BookingStatus.Approved && b.StartDate >= DateTime.UtcNow.Date)
-                .CountAsync();
+            var stallIds = stalls.Select(s => s.Id).ToArray();
 
-            var revenue = await _context.Payments
-                .Include(p => p.Booking)
-                .ThenInclude(b => b.Stall)
-                .Where(p => p.Status == PaymentStatus.Completed && p.Booking.Stall.OwnerId == userId)
-                .SumAsync(p => (decimal?)p.Amount) ?? 0;
+            var bookings = new List<Booking>();
+            var payments = new List<Payment>();
+            var feedbackEntries = new List<Feedback>();
+
+            if (stallIds.Length > 0)
+            {
+                bookings = await _context.Bookings
+                    .Include(b => b.Customer)
+                    .Include(b => b.Stall)
+                    .Where(b => stallIds.Contains(b.StallId))
+                    .ToListAsync();
+
+                var bookingIds = bookings.Select(b => b.Id).ToArray();
+
+                if (bookingIds.Length > 0)
+                {
+                    payments = await _context.Payments
+                        .Where(p => bookingIds.Contains(p.BookingId))
+                        .ToListAsync();
+
+                    feedbackEntries = await _context.Feedback
+                        .Where(f => bookingIds.Contains(f.BookingId))
+                        .OrderByDescending(f => f.SubmittedAt)
+                        .ToListAsync();
+                }
+            }
+
+            var bookingLookup = bookings.ToDictionary(b => b.Id);
+            var paymentLookup = payments
+                .GroupBy(p => p.BookingId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.ProcessedAt).FirstOrDefault());
+
+            var revenueByStall = payments
+                .Where(p => p.Status == PaymentStatus.Completed && bookingLookup.ContainsKey(p.BookingId))
+                .GroupBy(p => bookingLookup[p.BookingId].StallId)
+                .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
+
+            var reviewsByStall = feedbackEntries
+                .Where(f => bookingLookup.ContainsKey(f.BookingId))
+                .GroupBy(f => bookingLookup[f.BookingId].StallId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var stallSummaries = stalls.Select(stall =>
+            {
+                var stallBookings = bookings.Where(b => b.StallId == stall.Id).ToList();
+                var stallReviews = reviewsByStall.ContainsKey(stall.Id) ? reviewsByStall[stall.Id] : new List<Feedback>();
+                var nextBookingEntity = stallBookings
+                    .Where(b => b.Status == BookingStatus.Approved && b.EndDate >= today)
+                    .OrderBy(b => b.StartDate)
+                    .FirstOrDefault();
+
+                OwnerBookingDetailViewModel nextBooking = null;
+                if (nextBookingEntity != null)
+                {
+                    paymentLookup.TryGetValue(nextBookingEntity.Id, out var payment);
+                    nextBooking = MapBookingDetail(nextBookingEntity, payment);
+                }
+
+                double? averageRating = null;
+                if (stallReviews.Any())
+                {
+                    averageRating = Math.Round(stallReviews.Average(r => r.Rating), 1);
+                }
+
+                var stallRevenue = revenueByStall.ContainsKey(stall.Id) ? revenueByStall[stall.Id] : 0m;
+
+                return new OwnerStallSummaryViewModel
+                {
+                    StallId = stall.Id,
+                    Name = stall.Name,
+                    Location = stall.Location,
+                    Size = stall.Size,
+                    RentPerDay = stall.RentPerDay,
+                    Status = stall.Status,
+                    TotalBookings = stallBookings.Count,
+                    PendingRequests = stallBookings.Count(b => b.Status == BookingStatus.Pending),
+                    TotalRevenue = decimal.Round(stallRevenue, 2, MidpointRounding.AwayFromZero),
+                    AverageRating = averageRating,
+                    ReviewCount = stallReviews.Count,
+                    NextBooking = nextBooking
+                };
+            }).ToList();
+
+            var upcomingBookings = bookings
+                .Where(b => b.Status == BookingStatus.Approved && b.EndDate >= today)
+                .OrderBy(b => b.StartDate)
+                .Take(6)
+                .Select(b => MapBookingDetail(b, paymentLookup.ContainsKey(b.Id) ? paymentLookup[b.Id] : null))
+                .ToList();
+
+            var recentFeedback = feedbackEntries
+                .Take(6)
+                .Select(f =>
+                {
+                    var booking = bookingLookup[f.BookingId];
+                    return new OwnerFeedbackViewModel
+                    {
+                        StallName = booking.Stall.Name,
+                        CustomerName = booking.Customer != null ? booking.Customer.FullName : "-",
+                        Rating = f.Rating,
+                        Comments = f.Comments,
+                        SubmittedAt = f.SubmittedAt
+                    };
+                })
+                .ToList();
+
+            var totalRevenue = revenueByStall.Values.DefaultIfEmpty(0m).Sum();
 
             var model = new StallOwnerDashboardViewModel
             {
-                MyStallCount = myStalls,
-                PendingBookings = pendingBookings,
-                UpcomingBookings = upcomingBookings,
-                TotalRevenue = Math.Round(revenue, 2)
+                MyStallCount = stalls.Count,
+                PendingBookings = bookings.Count(b => b.Status == BookingStatus.Pending),
+                UpcomingBookings = upcomingBookings.Count,
+                TotalRevenue = decimal.Round(totalRevenue, 2, MidpointRounding.AwayFromZero),
+                StallSummaries = stallSummaries,
+                UpcomingBookingDetails = upcomingBookings,
+                RecentFeedback = recentFeedback
             };
 
             return View(model);
@@ -183,23 +286,142 @@ namespace EasExpo.Controllers
         public async Task<IActionResult> Bookings()
         {
             var userId = _userManager.GetUserId(User);
-            var bookings = await _context.Bookings
+            var bookingEntities = await _context.Bookings
                 .Include(b => b.Stall)
                 .Include(b => b.Customer)
                 .Where(b => b.Stall.OwnerId == userId)
                 .OrderByDescending(b => b.CreatedAt)
-                .Select(b => new OwnerBookingViewModel
+                .ToListAsync();
+
+            var bookingIds = bookingEntities.Select(b => b.Id).ToArray();
+            var payments = bookingIds.Length > 0
+                ? await _context.Payments
+                    .Where(p => bookingIds.Contains(p.BookingId))
+                    .ToListAsync()
+                : new List<Payment>();
+
+            var paymentLookup = payments
+                .GroupBy(p => p.BookingId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.ProcessedAt).FirstOrDefault());
+
+            var bookings = bookingEntities.Select(b =>
+            {
+                paymentLookup.TryGetValue(b.Id, out var payment);
+                return new OwnerBookingViewModel
                 {
                     Id = b.Id,
-                    StallName = b.Stall.Name,
-                    CustomerName = b.Customer.FullName,
+                    StallName = b.Stall != null ? b.Stall.Name : string.Empty,
+                    CustomerName = b.Customer != null ? b.Customer.FullName : string.Empty,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
                     Status = b.Status,
-                    PaymentStatus = b.PaymentStatus
-                }).ToListAsync();
+                    PaymentStatus = b.PaymentStatus,
+                    Amount = CalculateAmount(b.StartDate, b.EndDate, b.Stall != null ? b.Stall.RentPerDay : 0m),
+                    PaymentReference = payment != null ? payment.TransactionReference : null
+                };
+            }).ToList();
 
             return View(bookings);
+        }
+
+        public async Task<IActionResult> StallDetails(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+            var stall = await _context.Stalls.FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
+            if (stall == null)
+            {
+                return NotFound();
+            }
+
+            var bookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Stall)
+                .Where(b => b.StallId == stall.Id)
+                .OrderByDescending(b => b.StartDate)
+                .ToListAsync();
+
+            var bookingIds = bookings.Select(b => b.Id).ToArray();
+            var bookingById = bookings.ToDictionary(b => b.Id);
+            var payments = bookingIds.Length > 0
+                ? await _context.Payments.Where(p => bookingIds.Contains(p.BookingId)).ToListAsync()
+                : new List<Payment>();
+
+            var paymentLookup = payments
+                .GroupBy(p => p.BookingId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.ProcessedAt).FirstOrDefault());
+
+            var feedbackEntries = bookingIds.Length > 0
+                ? await _context.Feedback
+                    .Where(f => bookingIds.Contains(f.BookingId))
+                    .OrderByDescending(f => f.SubmittedAt)
+                    .ToListAsync()
+                : new List<Feedback>();
+
+            var bookingDetails = bookings
+                .Select(b =>
+                {
+                    paymentLookup.TryGetValue(b.Id, out var payment);
+                    return MapBookingDetail(b, payment);
+                })
+                .ToList();
+
+            var feedbackModels = feedbackEntries
+                .Select(f =>
+                {
+                    bookingById.TryGetValue(f.BookingId, out var booking);
+                    return new OwnerFeedbackViewModel
+                    {
+                        StallName = stall.Name,
+                        CustomerName = booking != null && booking.Customer != null ? booking.Customer.FullName : string.Empty,
+                        Rating = f.Rating,
+                        Comments = f.Comments,
+                        SubmittedAt = f.SubmittedAt
+                    };
+                })
+                .ToList();
+
+            var nextBooking = bookings
+                .Where(b => b.Status == BookingStatus.Approved && b.EndDate >= DateTime.UtcNow.Date)
+                .OrderBy(b => b.StartDate)
+                .FirstOrDefault();
+
+            OwnerBookingDetailViewModel nextBookingModel = null;
+            if (nextBooking != null)
+            {
+                paymentLookup.TryGetValue(nextBooking.Id, out var payment);
+                nextBookingModel = MapBookingDetail(nextBooking, payment);
+            }
+
+            double? averageRating = null;
+            if (feedbackEntries.Any())
+            {
+                averageRating = Math.Round(feedbackEntries.Average(f => f.Rating), 1);
+            }
+
+            var stallRevenue = payments.Where(p => p.Status == PaymentStatus.Completed).Sum(p => p.Amount);
+
+            var model = new OwnerStallDetailViewModel
+            {
+                StallId = stall.Id,
+                Name = stall.Name,
+                Location = stall.Location,
+                Size = stall.Size,
+                RentPerDay = stall.RentPerDay,
+                Status = stall.Status,
+                TotalBookings = bookings.Count,
+                PendingRequests = bookings.Count(b => b.Status == BookingStatus.Pending),
+                TotalRevenue = decimal.Round(stallRevenue, 2, MidpointRounding.AwayFromZero),
+                AverageRating = averageRating,
+                ReviewCount = feedbackEntries.Count,
+                NextBooking = nextBookingModel,
+                Description = stall.Description,
+                CreatedAt = stall.CreatedAt,
+                UpdatedAt = stall.UpdatedAt,
+                BookingHistory = bookingDetails,
+                Feedback = feedbackModels
+            };
+
+            return View(model);
         }
 
         [HttpPost]
@@ -268,6 +490,38 @@ namespace EasExpo.Controllers
                 }).ToListAsync();
 
             return View(feedback);
+        }
+
+        private static OwnerBookingDetailViewModel MapBookingDetail(Booking booking, Payment payment = null)
+        {
+            if (booking == null)
+            {
+                throw new ArgumentNullException(nameof(booking));
+            }
+
+            var stallName = booking.Stall != null ? booking.Stall.Name : string.Empty;
+            var customerName = booking.Customer != null ? booking.Customer.FullName : string.Empty;
+            var rentPerDay = booking.Stall != null ? booking.Stall.RentPerDay : 0m;
+
+            return new OwnerBookingDetailViewModel
+            {
+                BookingId = booking.Id,
+                StallName = stallName,
+                CustomerName = customerName,
+                StartDate = booking.StartDate,
+                EndDate = booking.EndDate,
+                Status = booking.Status,
+                PaymentStatus = booking.PaymentStatus,
+                Amount = CalculateAmount(booking.StartDate, booking.EndDate, rentPerDay),
+                PaymentReference = payment != null ? payment.TransactionReference : null,
+                PaymentDate = payment?.ProcessedAt
+            };
+        }
+
+        private static decimal CalculateAmount(DateTime start, DateTime end, decimal rentPerDay)
+        {
+            var days = (end.Date - start.Date).Days + 1;
+            return Math.Max(days, 1) * rentPerDay;
         }
     }
 }

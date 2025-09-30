@@ -36,9 +36,16 @@ else
                         </span>
                     </td>
                     <td>
-                        <span class="badge badge-pill @(booking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : booking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
-                            @booking.PaymentStatus
-                        </span>
+                        <div>
+                            <span class="badge badge-pill @(booking.PaymentStatus == PaymentStatus.Completed ? "badge-success" : booking.PaymentStatus == PaymentStatus.Pending ? "badge-warning" : "badge-danger")">
+                                @booking.PaymentStatus
+                            </span>
+                        </div>
+                        <small class="text-muted">₹@booking.Amount.ToString("N0")</small>
+                        @if (!string.IsNullOrWhiteSpace(booking.PaymentReference))
+                        {
+                            <div><small class="text-muted">Ref: @booking.PaymentReference</small></div>
+                        }
                     </td>
                     <td class="text-right">
                         @if (booking.Status == BookingStatus.Pending)

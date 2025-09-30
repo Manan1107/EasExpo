@@ -39,6 +39,7 @@ else
                     </span>
                 </td>
                 <td class="text-right">
+                    <a asp-action="StallDetails" asp-route-id="@stall.Id" class="btn btn-sm btn-outline-primary mr-1">Details</a>
                     <a asp-action="EditStall" asp-route-id="@stall.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                     <form asp-action="DeleteStall" asp-route-id="@stall.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this stall?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>

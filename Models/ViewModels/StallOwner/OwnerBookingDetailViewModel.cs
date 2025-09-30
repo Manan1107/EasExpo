@@ -3,9 +3,9 @@ using EasExpo.Models.Enums;
 
 namespace EasExpo.Models.ViewModels.StallOwner
 {
-    public class OwnerBookingViewModel
+    public class OwnerBookingDetailViewModel
     {
-        public int Id { get; set; }
+        public int BookingId { get; set; }
         public string StallName { get; set; }
         public string CustomerName { get; set; }
         public DateTime StartDate { get; set; }
@@ -14,5 +14,6 @@ namespace EasExpo.Models.ViewModels.StallOwner
         public PaymentStatus PaymentStatus { get; set; }
         public decimal Amount { get; set; }
         public string PaymentReference { get; set; }
+        public DateTime? PaymentDate { get; set; }
     }
 }

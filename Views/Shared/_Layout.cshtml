@@ -1,5 +1,25 @@
-﻿@using EasExpo.Models.Constants
+﻿@using System
+@using EasExpo.Models.Constants
 @using EasExpo.Models
+
+@functions {
+    private bool IsActive(string controller, string action = null)
+    {
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+        if (!string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (action == null)
+        {
+            return true;
+        }
+
+        return string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+    }
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -45,11 +65,20 @@
                     </ul>
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark @(IsActive("Home") ? "active" : string.Empty)" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Stalls" asp-action="Index">Stalls</a>
-                        </li>
+                        @if (User.IsInRole(RoleNames.StallOwner))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(IsActive("StallOwner", "MyStalls") ? "active" : string.Empty)" asp-controller="StallOwner" asp-action="MyStalls">My stalls</a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(IsActive("Stalls") ? "active" : string.Empty)" asp-controller="Stalls" asp-action="Index">Stalls</a>
+                            </li>
+                        }
                         @if (User.IsInRole(RoleNames.Admin))
                         {
                             <li class="nav-item dropdown">
@@ -57,11 +86,11 @@
                                     Admin
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="adminDropdown">
-                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
-                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Users">Users</a>
-                                    <a class="dropdown-item" asp-controller="Admin" asp-action="Stalls">Stalls</a>
-                                    <a class="dropdown-item" asp-controller="Admin" asp-action="OwnerApplications">Owner applications</a>
-                                    <a class="dropdown-item" asp-controller="Admin" asp-action="PaymentReports">Payment reports</a>
+                                    <a class="dropdown-item @(IsActive("Admin", "Dashboard") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                                    <a class="dropdown-item @(IsActive("Admin", "Users") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Users">Users</a>
+                                    <a class="dropdown-item @(IsActive("Admin", "Stalls") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Stalls">Stalls</a>
+                                    <a class="dropdown-item @(IsActive("Admin", "OwnerApplications") ? "active" : string.Empty)" asp-controller="Admin" asp-action="OwnerApplications">Owner applications</a>
+                                    <a class="dropdown-item @(IsActive("Admin", "PaymentReports") ? "active" : string.Empty)" asp-controller="Admin" asp-action="PaymentReports">Payment reports</a>
                                 </div>
                             </li>
                         }
@@ -79,14 +108,14 @@
                                 </div>
                             </li>
                         }
-                        @if (User.IsInRole(RoleNames.Customer))
+                        @if (User.IsInRole(RoleNames.Customer) && !User.IsInRole(RoleNames.Admin) && !User.IsInRole(RoleNames.StallOwner))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Bookings" asp-action="MyBookings">My bookings</a>
+                                <a class="nav-link text-dark @(IsActive("Bookings", "MyBookings") ? "active" : string.Empty)" asp-controller="Bookings" asp-action="MyBookings">My bookings</a>
                             </li>
                         }
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark @(IsActive("Home", "Privacy") ? "active" : string.Empty)" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
                 </div>
