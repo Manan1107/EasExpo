@@ -1,0 +1,63 @@
+@model EasExpo.Models.ViewModels.StallOwner.OwnerEventFormViewModel
+@{
+    ViewData["Title"] = "Create event";
+}
+
+<h1 class="h3 mb-3">Create event</h1>
+<p class="text-muted">Define the event details and how many stall slots you'd like to offer.</p>
+
+<form asp-action="CreateEvent" method="post">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-6">
+            <label asp-for="Location"></label>
+            <input asp-for="Location" class="form-control" />
+            <span asp-validation-for="Location" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-6">
+            <label asp-for="StartDate"></label>
+            <input asp-for="StartDate" class="form-control" type="date" />
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-6">
+            <label asp-for="EndDate"></label>
+            <input asp-for="EndDate" class="form-control" type="date" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group col-md-4">
+            <label asp-for="StallSize"></label>
+            <input asp-for="StallSize" class="form-control" />
+            <span asp-validation-for="StallSize" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-4">
+            <label asp-for="SlotPrice"></label>
+            <input asp-for="SlotPrice" class="form-control" />
+            <span asp-validation-for="SlotPrice" class="text-danger"></span>
+        </div>
+        <div class="form-group col-md-4">
+            <label asp-for="TotalSlots"></label>
+            <input asp-for="TotalSlots" class="form-control" />
+            <span asp-validation-for="TotalSlots" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Create event</button>
+    <a asp-action="MyEvents" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

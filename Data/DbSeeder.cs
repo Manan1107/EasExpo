@@ -149,39 +149,61 @@ namespace EasExpo.Data
 
         private static async Task SeedDomainDataAsync(EasExpoDbContext context, ApplicationUser owner, ApplicationUser customer)
         {
-            if (await context.Stalls.AnyAsync())
+            if (await context.Events.AnyAsync())
             {
                 return;
             }
 
+            var sampleEvent = new Event
+            {
+                Name = "EasExpo Launch Fair",
+                Location = "Expo Center Block A",
+                StartDate = DateTime.UtcNow.Date.AddDays(14),
+                EndDate = DateTime.UtcNow.Date.AddDays(17),
+                StallSize = "20x20 ft",
+                SlotPrice = 2500,
+                TotalSlots = 3,
+                Description = "Experience the latest exhibitors in our flagship launch event.",
+                OwnerId = owner.Id
+            };
+
+            context.Events.Add(sampleEvent);
+            await context.SaveChangesAsync();
+
             var stall1 = new Stall
             {
-                Name = "Prime Hall A1",
-                Location = "Expo Center Block A",
-                Size = "20x20 ft",
-                RentPerDay = 2500,
-                Description = "Spacious stall near the main entrance.",
+                EventId = sampleEvent.Id,
+                SlotNumber = 1,
+                Name = "Launch Fair · Slot 1",
+                Location = sampleEvent.Location,
+                Size = sampleEvent.StallSize,
+                RentPerDay = sampleEvent.SlotPrice,
+                Description = "Prime spot near the main entrance.",
                 Status = StallStatus.Available,
                 OwnerId = owner.Id
             };
 
             var stall2 = new Stall
             {
-                Name = "Boutique Corner",
-                Location = "Expo Center Block B",
-                Size = "15x12 ft",
-                RentPerDay = 1800,
-                Description = "Ideal for boutique and lifestyle stalls.",
+                EventId = sampleEvent.Id,
+                SlotNumber = 2,
+                Name = "Launch Fair · Slot 2",
+                Location = sampleEvent.Location,
+                Size = sampleEvent.StallSize,
+                RentPerDay = sampleEvent.SlotPrice,
+                Description = "Ideal for boutique and lifestyle brands.",
                 Status = StallStatus.Booked,
                 OwnerId = owner.Id
             };
 
             var stall3 = new Stall
             {
-                Name = "Food Court Spot",
-                Location = "Outdoor Pavilion",
-                Size = "25x25 ft",
-                RentPerDay = 3200,
+                EventId = sampleEvent.Id,
+                SlotNumber = 3,
+                Name = "Launch Fair · Slot 3",
+                Location = sampleEvent.Location,
+                Size = sampleEvent.StallSize,
+                RentPerDay = sampleEvent.SlotPrice,
                 Description = "High footfall area perfect for F&B.",
                 Status = StallStatus.Maintenance,
                 OwnerId = owner.Id
@@ -190,12 +212,15 @@ namespace EasExpo.Data
             await context.Stalls.AddRangeAsync(stall1, stall2, stall3);
             await context.SaveChangesAsync();
 
+            sampleEvent.TotalSlots = 3;
+            await context.SaveChangesAsync();
+
             var booking = new Booking
             {
                 StallId = stall2.Id,
                 CustomerId = customer.Id,
-                StartDate = DateTime.UtcNow.AddDays(7),
-                EndDate = DateTime.UtcNow.AddDays(10),
+                StartDate = sampleEvent.StartDate,
+                EndDate = sampleEvent.EndDate,
                 Status = BookingStatus.Approved,
                 PaymentStatus = PaymentStatus.Completed
             };

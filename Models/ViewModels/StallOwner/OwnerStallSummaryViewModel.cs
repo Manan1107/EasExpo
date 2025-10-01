@@ -5,6 +5,9 @@ namespace EasExpo.Models.ViewModels.StallOwner
     public class OwnerStallSummaryViewModel
     {
         public int StallId { get; set; }
+    public int EventId { get; set; }
+    public string EventName { get; set; }
+    public int SlotNumber { get; set; }
         public string Name { get; set; }
         public string Location { get; set; }
         public string Size { get; set; }

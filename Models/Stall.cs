@@ -9,13 +9,20 @@ namespace EasExpo.Models
     {
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
-        public string Name { get; set; }
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; }
 
-        [Required]
-        [MaxLength(150)]
-        public string Location { get; set; }
+    [Required]
+    public int EventId { get; set; }
+
+    public Event Event { get; set; }
+
+    public int SlotNumber { get; set; }
+
+    [Required]
+    [MaxLength(150)]
+    public string Location { get; set; }
 
         [MaxLength(100)]
         public string Size { get; set; }
@@ -30,10 +37,10 @@ namespace EasExpo.Models
         [Required]
         public StallStatus Status { get; set; } = StallStatus.Available;
 
-        [Required]
-        public string OwnerId { get; set; }
+    [Required]
+    public string OwnerId { get; set; }
 
-        public ApplicationUser Owner { get; set; }
+    public ApplicationUser Owner { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

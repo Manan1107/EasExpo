@@ -10,8 +10,8 @@
     {
         if (User.IsInRole(RoleNames.StallOwner))
         {
-            <a asp-controller="StallOwner" asp-action="CreateStall" class="btn btn-primary btn-lg mr-2">Add stall</a>
-            <a asp-controller="StallOwner" asp-action="MyStalls" class="btn btn-outline-primary btn-lg">My stalls</a>
+            <a asp-controller="StallOwner" asp-action="CreateEvent" class="btn btn-primary btn-lg mr-2">Add event</a>
+            <a asp-controller="StallOwner" asp-action="MyEvents" class="btn btn-outline-primary btn-lg">My events</a>
         }
         else if (User.IsInRole(RoleNames.Admin))
         {
@@ -19,7 +19,7 @@
         }
         else
         {
-            <a asp-controller="Stalls" asp-action="Index" class="btn btn-primary btn-lg mr-2">Browse stalls</a>
+            <a asp-controller="Events" asp-action="Index" class="btn btn-primary btn-lg mr-2">Browse events</a>
             @if (User.IsInRole(RoleNames.Customer))
             {
                 <a asp-controller="Bookings" asp-action="MyBookings" class="btn btn-outline-primary btn-lg">My bookings</a>

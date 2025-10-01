@@ -9,14 +9,14 @@
         <h1 class="mb-1">Owner dashboard</h1>
         <p class="text-muted mb-0">Track stall performance, bookings, revenue and customer feedback at a glance.</p>
     </div>
-    <a class="btn btn-primary" asp-action="MyStalls">Manage my stalls</a>
+    <a class="btn btn-primary" asp-action="MyEvents">Manage my events</a>
 </div>
 
 <div class="row">
     <div class="col-md-3 col-sm-6 mb-4">
         <div class="card border-0 shadow-sm h-100 text-center">
             <div class="card-body">
-                <h6 class="text-muted text-uppercase">My stalls</h6>
+                <h6 class="text-muted text-uppercase">My slots</h6>
                 <div class="display-4">@Model.MyStallCount</div>
             </div>
         </div>
@@ -63,7 +63,8 @@
                 <table class="table table-hover align-middle">
                     <thead class="thead-light">
                         <tr>
-                            <th>Stall</th>
+                            <th>Slot</th>
+                            <th>Event</th>
                             <th>Status</th>
                             <th>Bookings</th>
                             <th>Pending</th>
@@ -79,7 +80,18 @@
                         <tr>
                             <td>
                                 <div class="font-weight-semibold">@stall.Name</div>
-                                <div class="small text-muted">@stall.Location@if(!string.IsNullOrWhiteSpace(stall.Size)){<text> • @stall.Size</text>}</div>
+                                <div class="small text-muted">Slot #@stall.SlotNumber</div>
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(stall.EventName))
+                                {
+                                    <a asp-action="EventDetails" asp-route-id="@stall.EventId" class="font-weight-semibold">@stall.EventName</a>
+                                    <div class="small text-muted">@stall.Location@if(!string.IsNullOrWhiteSpace(stall.Size)){<text> • @stall.Size</text>}</div>
+                                }
+                                else
+                                {
+                                    <div class="small text-muted">@stall.Location@if(!string.IsNullOrWhiteSpace(stall.Size)){<text> • @stall.Size</text>}</div>
+                                }
                             </td>
                             <td>
                                 <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">@stall.Status</span>

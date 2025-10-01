@@ -42,8 +42,11 @@ namespace EasExpo.Controllers
         [HttpGet]
         public async Task<IActionResult> Book(int stallId)
         {
-            var stall = await _context.Stalls.FindAsync(stallId);
-            if (stall == null || stall.Status == StallStatus.Maintenance || stall.Status == StallStatus.Booked)
+            var stall = await _context.Stalls
+                .Include(s => s.Event)
+                .FirstOrDefaultAsync(s => s.Id == stallId);
+
+            if (stall == null || stall.Event == null || stall.Status != StallStatus.Available)
             {
                 return NotFound();
             }
@@ -51,10 +54,14 @@ namespace EasExpo.Controllers
             var model = new BookingCreateViewModel
             {
                 StallId = stall.Id,
-                StallName = stall.Name,
+                EventId = stall.EventId,
+                StallName = string.IsNullOrWhiteSpace(stall.Name) ? $"Slot {stall.SlotNumber}" : stall.Name,
                 RentPerDay = stall.RentPerDay,
-                StartDate = DateTime.UtcNow.Date.AddDays(1),
-                EndDate = DateTime.UtcNow.Date.AddDays(2)
+                EventName = stall.Event.Name,
+                EventLocation = stall.Event.Location,
+                StartDate = stall.Event.StartDate,
+                EndDate = stall.Event.EndDate,
+                StallSize = !string.IsNullOrWhiteSpace(stall.Size) ? stall.Size : stall.Event.StallSize
             };
 
             return View(model);
@@ -64,43 +71,33 @@ namespace EasExpo.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Book(BookingCreateViewModel model)
         {
-            var stall = await _context.Stalls.FindAsync(model.StallId);
+            var stall = await _context.Stalls
+                .Include(s => s.Event)
+                .FirstOrDefaultAsync(s => s.Id == model.StallId);
             if (stall == null)
             {
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
+            model.EventId = stall.EventId;
+            model.StallName = string.IsNullOrWhiteSpace(stall.Name) ? $"Slot {stall.SlotNumber}" : stall.Name;
+            model.RentPerDay = stall.RentPerDay;
+            model.EventName = stall.Event?.Name;
+            model.EventLocation = stall.Event?.Location;
+            model.StartDate = stall.Event?.StartDate ?? model.StartDate;
+            model.EndDate = stall.Event?.EndDate ?? model.EndDate;
+            model.StallSize = !string.IsNullOrWhiteSpace(stall.Size) ? stall.Size : stall.Event?.StallSize;
+
+            if (stall.Event == null)
             {
-                model.StallName = stall.Name;
-                model.RentPerDay = stall.RentPerDay;
-                return View(model);
+                TempData["Error"] = "This slot is no longer linked to an event.";
+                return RedirectToAction("Index", "Events");
             }
 
-            if (model.StartDate.Date < DateTime.UtcNow.Date)
+            if (stall.Status != StallStatus.Available)
             {
-                ModelState.AddModelError(nameof(model.StartDate), "Start date cannot be in the past.");
-            }
-
-            if (model.EndDate < model.StartDate)
-            {
-                ModelState.AddModelError(nameof(model.EndDate), "End date should be on or after the start date.");
-            }
-
-            var hasOverlap = await _context.Bookings
-                .Where(b => b.StallId == model.StallId && b.Status != BookingStatus.Rejected && b.Status != BookingStatus.Cancelled)
-                .AnyAsync(b => model.StartDate <= b.EndDate && model.EndDate >= b.StartDate);
-
-            if (hasOverlap)
-            {
-                ModelState.AddModelError(string.Empty, "The stall is already booked for the selected dates.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                model.StallName = stall.Name;
-                model.RentPerDay = stall.RentPerDay;
-                return View(model);
+                TempData["Error"] = "This slot is no longer available.";
+                return RedirectToAction("Details", "Events", new { id = stall.EventId });
             }
 
             var userId = _userManager.GetUserId(User);
@@ -126,12 +123,15 @@ namespace EasExpo.Controllers
             var userId = _userManager.GetUserId(User);
             var bookings = await _context.Bookings
                 .Include(b => b.Stall)
+                .ThenInclude(s => s.Event)
                 .Where(b => b.CustomerId == userId)
                 .OrderByDescending(b => b.CreatedAt)
                 .Select(b => new BookingListItemViewModel
                 {
                     Id = b.Id,
-                    StallName = b.Stall.Name,
+                    StallName = !string.IsNullOrWhiteSpace(b.Stall.Name) ? b.Stall.Name : $"Slot {b.Stall.SlotNumber}",
+                    EventName = b.Stall.Event != null ? b.Stall.Event.Name : null,
+                    SlotNumber = b.Stall.SlotNumber,
                     StartDate = b.StartDate,
                     EndDate = b.EndDate,
                     Status = b.Status,
@@ -148,6 +148,7 @@ namespace EasExpo.Controllers
             var userId = _userManager.GetUserId(User);
             var booking = await _context.Bookings
                 .Include(b => b.Stall)
+                .ThenInclude(s => s.Event)
                 .Include(b => b.Customer)
                 .FirstOrDefaultAsync(b => b.Id == id && b.CustomerId == userId);
 
@@ -209,11 +210,15 @@ namespace EasExpo.Controllers
                 booking.PaymentStatus = PaymentStatus.Pending;
                 await _context.SaveChangesAsync();
 
+                var stallLabel = !string.IsNullOrWhiteSpace(booking.Stall?.Name)
+                    ? booking.Stall.Name
+                    : $"Slot {booking.Stall?.SlotNumber}";
+
                 var model = new PaymentCheckoutViewModel
                 {
                     BookingId = booking.Id,
                     StallId = booking.StallId,
-                    StallName = booking.Stall.Name,
+                    StallName = booking.Stall?.Event != null ? $"{booking.Stall.Event.Name} · {stallLabel}" : stallLabel,
                     Amount = amount,
                     StartDate = booking.StartDate,
                     EndDate = booking.EndDate,
@@ -249,6 +254,7 @@ namespace EasExpo.Controllers
             var userId = _userManager.GetUserId(User);
             var booking = await _context.Bookings
                 .Include(b => b.Stall)
+                .ThenInclude(s => s.Event)
                 .FirstOrDefaultAsync(b => b.Id == model.BookingId && b.CustomerId == userId);
 
             if (booking == null)

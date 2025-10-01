@@ -8,6 +8,14 @@ namespace EasExpo.Models.ViewModels.StallOwner
         public int? Id { get; set; }
 
         [Required]
+        [Display(Name = "Event")]
+        public int EventId { get; set; }
+
+    [Range(1, 1000)]
+        [Display(Name = "Slot number")]
+        public int SlotNumber { get; set; }
+
+        [Required]
         [MaxLength(100)]
         public string Name { get; set; }
 
@@ -19,7 +27,7 @@ namespace EasExpo.Models.ViewModels.StallOwner
         public string Size { get; set; }
 
         [Range(0, 1000000)]
-        [Display(Name = "Rent per day (₹)")]
+        [Display(Name = "Price (₹)")]
         public decimal RentPerDay { get; set; }
 
         [MaxLength(500)]

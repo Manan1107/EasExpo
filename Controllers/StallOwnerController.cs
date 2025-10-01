@@ -6,6 +6,7 @@ using EasExpo.Models;
 using EasExpo.Models.Constants;
 using EasExpo.Models.Enums;
 using EasExpo.Models.ViewModels.StallOwner;
+using EasExpo.Models.ViewModels.Events;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -32,61 +33,270 @@ namespace EasExpo.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> MyStalls()
+        [HttpGet]
+        public IActionResult CreateEvent()
+        {
+            var model = new OwnerEventFormViewModel
+            {
+                StartDate = DateTime.UtcNow.Date.AddDays(7),
+                EndDate = DateTime.UtcNow.Date.AddDays(10),
+                TotalSlots = 10,
+                SlotPrice = 0
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateEvent(OwnerEventFormViewModel model)
+        {
+            if (model.EndDate < model.StartDate)
+            {
+                ModelState.AddModelError(nameof(model.EndDate), "End date should be on or after the start date.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var userId = _userManager.GetUserId(User);
+
+            var eventEntity = new Event
+            {
+                Name = model.Name,
+                Location = model.Location,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
+                StallSize = model.StallSize,
+                SlotPrice = model.SlotPrice,
+                TotalSlots = model.TotalSlots,
+                Description = model.Description,
+                OwnerId = userId
+            };
+
+            _context.Events.Add(eventEntity);
+            await _context.SaveChangesAsync();
+
+            for (var slot = 1; slot <= model.TotalSlots; slot++)
+            {
+                var stall = new Stall
+                {
+                    EventId = eventEntity.Id,
+                    SlotNumber = slot,
+                    Name = $"{model.Name} · Slot {slot}",
+                    Location = model.Location,
+                    Size = model.StallSize,
+                    RentPerDay = model.SlotPrice,
+                    Description = model.Description,
+                    Status = StallStatus.Available,
+                    OwnerId = userId
+                };
+
+                _context.Stalls.Add(stall);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Event created and stalls generated.";
+            return RedirectToAction(nameof(EventDetails), new { id = eventEntity.Id });
+        }
+
+        public async Task<IActionResult> EventDetails(int id)
         {
             var userId = _userManager.GetUserId(User);
-            var dashboard = await BuildDashboardModelAsync(userId);
-            return View(dashboard.StallSummaries);
+            var eventEntity = await _context.Events
+                .Include(e => e.Stalls)
+                .FirstOrDefaultAsync(e => e.Id == id && e.OwnerId == userId);
+
+            if (eventEntity == null)
+            {
+                return NotFound();
+            }
+
+            var stallIds = eventEntity.Stalls.Select(s => s.Id).ToArray();
+            var bookings = stallIds.Length > 0
+                ? await _context.Bookings
+                    .Include(b => b.Stall)
+                    .Where(b => stallIds.Contains(b.StallId))
+                    .ToListAsync()
+                : new System.Collections.Generic.List<Booking>();
+
+            var bookingIds = bookings.Select(b => b.Id).ToArray();
+
+            var payments = bookingIds.Length > 0
+                ? await _context.Payments
+                    .Where(p => bookingIds.Contains(p.BookingId))
+                    .ToListAsync()
+                : new System.Collections.Generic.List<Payment>();
+
+            var slots = eventEntity.Stalls
+                .OrderBy(s => s.SlotNumber)
+                .Select(s => new EventSlotViewModel
+                {
+                    StallId = s.Id,
+                    SlotNumber = s.SlotNumber,
+                    Status = s.Status,
+                    Name = s.Name,
+                    Description = s.Description,
+                    RentPerDay = s.RentPerDay,
+                    HasBookings = bookings.Any(b => b.StallId == s.Id)
+                })
+                .ToList();
+
+            var model = new OwnerEventDetailsViewModel
+            {
+                EventId = eventEntity.Id,
+                Name = eventEntity.Name,
+                Location = eventEntity.Location,
+                StartDate = eventEntity.StartDate,
+                EndDate = eventEntity.EndDate,
+                StallSize = eventEntity.StallSize,
+                SlotPrice = eventEntity.SlotPrice,
+                Description = eventEntity.Description,
+                TotalSlots = slots.Count,
+                AvailableSlots = slots.Count(s => s.Status == StallStatus.Available),
+                BookedSlots = slots.Count(s => s.Status == StallStatus.Booked),
+                PendingBookings = bookings.Count(b => b.PaymentStatus == PaymentStatus.Pending),
+                TotalRevenue = decimal.Round(payments.Where(p => p.Status == PaymentStatus.Completed).Sum(p => p.Amount), 2, MidpointRounding.AwayFromZero),
+                Slots = slots
+            };
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> MyEvents()
+        {
+            var userId = _userManager.GetUserId(User);
+            var events = await _context.Events
+                .Where(e => e.OwnerId == userId)
+                .Include(e => e.Stalls)
+                .OrderByDescending(e => e.StartDate)
+                .Select(e => new OwnerEventListItemViewModel
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    Location = e.Location,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    SlotPrice = e.SlotPrice,
+                    TotalSlots = e.Stalls.Count,
+                    AvailableSlots = e.Stalls.Count(s => s.Status == StallStatus.Available)
+                })
+                .ToListAsync();
+
+            return View(events);
         }
 
         [HttpGet]
-        public IActionResult CreateStall()
+        public IActionResult MyStalls()
         {
-            return View("StallForm", new OwnerStallFormViewModel());
+            return RedirectToAction(nameof(MyEvents));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateStall(int eventId, int? slotNumber = null)
+        {
+            var userId = _userManager.GetUserId(User);
+            var eventEntity = await _context.Events
+                .Include(e => e.Stalls)
+                .FirstOrDefaultAsync(e => e.Id == eventId && e.OwnerId == userId);
+
+            if (eventEntity == null)
+            {
+                return NotFound();
+            }
+
+            SetEventContext(eventEntity);
+
+            var nextSlot = slotNumber ?? CalculateNextSlotNumber(eventEntity);
+
+            var model = new OwnerStallFormViewModel
+            {
+                EventId = eventEntity.Id,
+                SlotNumber = nextSlot,
+                Name = string.IsNullOrWhiteSpace(eventEntity.Name) ? $"Slot {nextSlot}" : $"{eventEntity.Name} · Slot {nextSlot}",
+                Location = eventEntity.Location,
+                Size = eventEntity.StallSize,
+                RentPerDay = eventEntity.SlotPrice,
+                Description = eventEntity.Description,
+                Status = StallStatus.Available
+            };
+
+            return View("StallForm", model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateStall(OwnerStallFormViewModel model)
         {
+            var userId = _userManager.GetUserId(User);
+            var eventEntity = await _context.Events
+                .Include(e => e.Stalls)
+                .FirstOrDefaultAsync(e => e.Id == model.EventId && e.OwnerId == userId);
+
+            if (eventEntity == null)
+            {
+                ModelState.AddModelError(nameof(model.EventId), "The selected event could not be found.");
+            }
+            else
+            {
+                SetEventContext(eventEntity);
+
+                if (eventEntity.Stalls.Any(s => s.SlotNumber == model.SlotNumber))
+                {
+                    ModelState.AddModelError(nameof(model.SlotNumber), "This slot number already exists for the event.");
+                }
+            }
+
             if (!ModelState.IsValid)
             {
                 return View("StallForm", model);
             }
 
-            var userId = _userManager.GetUserId(User);
-
             var stall = new Stall
             {
-                Name = model.Name,
-                Location = model.Location,
-                Size = model.Size,
-                RentPerDay = model.RentPerDay,
+                EventId = eventEntity.Id,
+                SlotNumber = model.SlotNumber,
+                Name = string.IsNullOrWhiteSpace(model.Name) ? $"{eventEntity.Name} · Slot {model.SlotNumber}" : model.Name,
+                Location = string.IsNullOrWhiteSpace(model.Location) ? eventEntity.Location : model.Location,
+                Size = string.IsNullOrWhiteSpace(model.Size) ? eventEntity.StallSize : model.Size,
+                RentPerDay = model.RentPerDay <= 0 ? eventEntity.SlotPrice : model.RentPerDay,
                 Description = model.Description,
                 OwnerId = userId,
                 Status = model.Status
             };
 
             _context.Stalls.Add(stall);
+            eventEntity.TotalSlots += 1;
+            eventEntity.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Stall added successfully.";
-            return RedirectToAction(nameof(MyStalls));
+            TempData["Success"] = "Slot added successfully.";
+            return RedirectToAction(nameof(EventDetails), new { id = eventEntity.Id });
         }
 
         [HttpGet]
         public async Task<IActionResult> EditStall(int id)
         {
             var userId = _userManager.GetUserId(User);
-            var stall = await _context.Stalls.FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
+            var stall = await _context.Stalls
+                .Include(s => s.Event)
+                .FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
             if (stall == null)
             {
                 return NotFound();
             }
 
+            SetEventContext(stall.Event);
+
             var model = new OwnerStallFormViewModel
             {
                 Id = stall.Id,
+                EventId = stall.EventId,
+                SlotNumber = stall.SlotNumber,
                 Name = stall.Name,
                 Location = stall.Location,
                 Size = stall.Size,
@@ -102,16 +312,22 @@ namespace EasExpo.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditStall(OwnerStallFormViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View("StallForm", model);
-            }
-
             var userId = _userManager.GetUserId(User);
-            var stall = await _context.Stalls.FirstOrDefaultAsync(s => s.Id == model.Id && s.OwnerId == userId);
+            var stall = await _context.Stalls
+                .Include(s => s.Event)
+                .FirstOrDefaultAsync(s => s.Id == model.Id && s.OwnerId == userId);
             if (stall == null)
             {
                 return NotFound();
+            }
+
+            SetEventContext(stall.Event);
+
+            if (!ModelState.IsValid)
+            {
+                model.EventId = stall.EventId;
+                model.SlotNumber = stall.SlotNumber;
+                return View("StallForm", model);
             }
 
             stall.Name = model.Name;
@@ -124,8 +340,8 @@ namespace EasExpo.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Stall updated successfully.";
-            return RedirectToAction(nameof(MyStalls));
+            TempData["Success"] = "Slot updated successfully.";
+            return RedirectToAction(nameof(EventDetails), new { id = stall.EventId });
         }
 
         [HttpPost]
@@ -133,23 +349,32 @@ namespace EasExpo.Controllers
         public async Task<IActionResult> DeleteStall(int id)
         {
             var userId = _userManager.GetUserId(User);
-            var stall = await _context.Stalls.FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
+            var stall = await _context.Stalls
+                .Include(s => s.Event)
+                .FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
             if (stall == null)
             {
                 return NotFound();
             }
 
+            var eventId = stall.EventId;
+
             if (await _context.Bookings.AnyAsync(b => b.StallId == id))
             {
-                TempData["Error"] = "Cannot delete a stall that has bookings.";
-                return RedirectToAction(nameof(MyStalls));
+                TempData["Error"] = "Cannot delete a slot that has bookings.";
+                return RedirectToAction(nameof(EventDetails), new { id = eventId });
             }
 
             _context.Stalls.Remove(stall);
+            if (stall.Event != null)
+            {
+                stall.Event.TotalSlots = Math.Max(0, stall.Event.TotalSlots - 1);
+                stall.Event.UpdatedAt = DateTime.UtcNow;
+            }
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Stall removed.";
-            return RedirectToAction(nameof(MyStalls));
+            TempData["Success"] = "Slot removed.";
+            return RedirectToAction(nameof(EventDetails), new { id = eventId });
         }
 
         public async Task<IActionResult> Bookings()
@@ -196,11 +421,15 @@ namespace EasExpo.Controllers
         public async Task<IActionResult> StallDetails(int id)
         {
             var userId = _userManager.GetUserId(User);
-            var stall = await _context.Stalls.FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
+            var stall = await _context.Stalls
+                .Include(s => s.Event)
+                .FirstOrDefaultAsync(s => s.Id == id && s.OwnerId == userId);
             if (stall == null)
             {
                 return NotFound();
             }
+
+            SetEventContext(stall.Event);
 
             var bookings = await _context.Bookings
                 .Include(b => b.Customer)
@@ -277,11 +506,14 @@ namespace EasExpo.Controllers
             var model = new OwnerStallDetailViewModel
             {
                 StallId = stall.Id,
+                SlotNumber = stall.SlotNumber,
                 Name = stall.Name,
                 Location = stall.Location,
                 Size = stall.Size,
                 RentPerDay = stall.RentPerDay,
                 Status = stall.Status,
+                EventId = stall.EventId,
+                EventName = stall.Event?.Name,
                 TotalBookings = bookings.Count,
                 PendingRequests = bookings.Count(b => b.Status == BookingStatus.Pending),
                 TotalRevenue = decimal.Round(stallRevenue, 2, MidpointRounding.AwayFromZero),
@@ -372,6 +604,7 @@ namespace EasExpo.Controllers
 
             var stalls = await _context.Stalls
                 .Where(s => s.OwnerId == userId)
+                .Include(s => s.Event)
                 .OrderBy(s => s.Name)
                 .AsNoTracking()
                 .ToListAsync();
@@ -462,6 +695,9 @@ namespace EasExpo.Controllers
                 return new OwnerStallSummaryViewModel
                 {
                     StallId = stall.Id,
+                    EventId = stall.EventId,
+                    EventName = stall.Event?.Name,
+                    SlotNumber = stall.SlotNumber,
                     Name = stall.Name,
                     Location = stall.Location,
                     Size = stall.Size,
@@ -515,6 +751,48 @@ namespace EasExpo.Controllers
                 UpcomingBookingDetails = upcomingBookings,
                 RecentFeedback = recentFeedback
             };
+        }
+
+        private void SetEventContext(Event eventEntity)
+        {
+            if (eventEntity == null)
+            {
+                return;
+            }
+
+            ViewData["EventName"] = eventEntity.Name;
+            ViewData["EventLocation"] = eventEntity.Location;
+            ViewData["EventDates"] = $"{eventEntity.StartDate:dd MMM yyyy} - {eventEntity.EndDate:dd MMM yyyy}";
+        }
+
+        private static int CalculateNextSlotNumber(Event eventEntity)
+        {
+            if (eventEntity?.Stalls == null || !eventEntity.Stalls.Any())
+            {
+                return 1;
+            }
+
+            var orderedSlots = eventEntity.Stalls
+                .Select(s => s.SlotNumber)
+                .Where(n => n > 0)
+                .OrderBy(n => n)
+                .ToArray();
+
+            var expected = 1;
+            foreach (var slot in orderedSlots)
+            {
+                if (slot > expected)
+                {
+                    break;
+                }
+
+                if (slot == expected)
+                {
+                    expected++;
+                }
+            }
+
+            return expected;
         }
 
         private static OwnerBookingDetailViewModel MapBookingDetail(Booking booking, Payment payment = null)

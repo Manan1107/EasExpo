@@ -1,72 +1,9 @@
-@model IEnumerable<OwnerStallSummaryViewModel>
 @{
     ViewData["Title"] = "My stalls";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h3 mb-1">My stalls</h1>
-        <p class="text-muted mb-0">Review performance, manage availability, and dive into detailed insights for each stall.</p>
-    </div>
-    <a class="btn btn-primary" asp-action="CreateStall">Add stall</a>
+<div class="text-center py-5">
+    <h1 class="h3 mb-3">Stall management has moved</h1>
+    <p class="text-muted mb-4">All stall slots are now organised under events. Use the events dashboard to create, edit, or remove slots.</p>
+    <a asp-action="MyEvents" class="btn btn-primary">Go to my events</a>
 </div>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">You haven't added any stalls yet. Click "Add stall" to get started.</div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead class="thead-light">
-                <tr>
-                    <th>Stall</th>
-                    <th>Status</th>
-                    <th>Bookings</th>
-                    <th>Revenue</th>
-                    <th>Rating</th>
-                    <th class="text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var stall in Model)
-            {
-                <tr>
-                    <td>
-                        <div class="font-weight-semibold">@stall.Name</div>
-                        <div class="small text-muted">@stall.Location@if(!string.IsNullOrWhiteSpace(stall.Size)){<text> • @stall.Size</text>}</div>
-                        <div class="small text-muted">Rent/day: ₹@stall.RentPerDay.ToString("N0")</div>
-                    </td>
-                    <td>
-                        <span class="badge badge-pill @(stall.Status == StallStatus.Available ? "badge-success" : stall.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary")">@stall.Status</span>
-                    </td>
-                    <td>
-                        <div>@stall.TotalBookings total</div>
-                        <div class="small text-muted">@stall.PendingRequests pending</div>
-                    </td>
-                    <td>₹@stall.TotalRevenue.ToString("N0")</td>
-                    <td>
-                        @if (stall.AverageRating.HasValue)
-                        {
-                            <span class="badge badge-warning badge-pill">⭐ @stall.AverageRating.Value.ToString("0.0")</span>
-                            <div class="small text-muted">@stall.ReviewCount reviews</div>
-                        }
-                        else
-                        {
-                            <span class="text-muted">No reviews yet</span>
-                        }
-                    </td>
-                    <td class="text-right">
-                        <a asp-action="StallDetails" asp-route-id="@stall.StallId" class="btn btn-sm btn-outline-primary mr-1">View</a>
-                        <a asp-action="EditStall" asp-route-id="@stall.StallId" class="btn btn-sm btn-outline-secondary mr-1">Edit</a>
-                        <form asp-action="DeleteStall" asp-route-id="@stall.StallId" method="post" class="d-inline" onsubmit="return confirm('Delete this stall?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    </div>
-}

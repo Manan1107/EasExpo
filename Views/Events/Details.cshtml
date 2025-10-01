@@ -1,0 +1,86 @@
+@model EasExpo.Models.ViewModels.Events.EventDetailsViewModel
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">@Model.Name</h1>
+        <p class="text-muted mb-1">@Model.Location</p>
+        <p class="mb-0"><strong>@Model.StartDate.ToString("dd MMM yyyy")</strong> - @Model.EndDate.ToString("dd MMM yyyy")</p>
+    </div>
+    <div class="text-md-right mt-3 mt-md-0">
+        <div class="h5 mb-1">Price per stall: ₹@Model.SlotPrice.ToString("N0")</div>
+        @if (!string.IsNullOrWhiteSpace(Model.StallSize))
+        {
+            <div class="text-muted">Stall size: @Model.StallSize</div>
+        }
+        <span class="badge badge-pill @(Model.AvailableSlots > 0 ? "badge-success" : "badge-secondary") mt-2">
+            @Model.AvailableSlots/@Model.TotalSlots slots available
+        </span>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Description))
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title">About this event</h5>
+            <p class="card-text mb-0">@Model.Description</p>
+        </div>
+    </div>
+}
+
+<h2 class="h4 mb-3">Stall slots</h2>
+@if (!Model.Slots.Any())
+{
+    <div class="alert alert-info">No stall slots have been published for this event yet.</div>
+}
+else
+{
+    <div class="row">
+    @foreach (var slot in Model.Slots)
+    {
+        var isAvailable = slot.Status == EasExpo.Models.Enums.StallStatus.Available;
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title mb-0">Slot @slot.SlotNumber</h5>
+                        <span class="badge badge-pill @(isAvailable ? "badge-success" : "badge-secondary")">
+                            @slot.Status
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(slot.Name))
+                    {
+                        <p class="card-text text-muted mb-1">@slot.Name</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(slot.Description))
+                    {
+                        <p class="card-text text-muted small">@slot.Description</p>
+                    }
+                    <p class="card-text font-weight-bold mb-0">₹@slot.RentPerDay.ToString("N0")</p>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    @if (isAvailable && Model.CanBook)
+                    {
+                        <a asp-controller="Bookings" asp-action="Book" asp-route-stallId="@slot.StallId" class="btn btn-outline-primary btn-block">Book this slot</a>
+                    }
+                    else if (!Model.CanBook)
+                    {
+                        <span class="btn btn-outline-secondary btn-block disabled">Sign in as customer to book</span>
+                    }
+                    else
+                    {
+                        <span class="btn btn-outline-secondary btn-block disabled">Unavailable</span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+}
+
+<div class="mt-4">
+    <a asp-action="Index" class="btn btn-link">Back to events</a>
+</div>

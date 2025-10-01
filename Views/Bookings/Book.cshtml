@@ -3,27 +3,41 @@
     ViewData["Title"] = "Book stall";
 }
 
-<h1 class="h3 mb-3">Book @Model.StallName</h1>
-<p class="text-muted">Rent: ₹@Model.RentPerDay.ToString("N2") per day</p>
-
-<form asp-action="Book" method="post">
-    <div asp-validation-summary="All" class="text-danger"></div>
-    <input type="hidden" asp-for="StallId" />
-    <div class="form-row">
-        <div class="form-group col-md-6">
-            <label asp-for="StartDate"></label>
-            <input asp-for="StartDate" class="form-control" />
-            <span asp-validation-for="StartDate" class="text-danger"></span>
-        </div>
-        <div class="form-group col-md-6">
-            <label asp-for="EndDate"></label>
-            <input asp-for="EndDate" class="form-control" />
-            <span asp-validation-for="EndDate" class="text-danger"></span>
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h1 class="h4 mb-2">Reserve @Model.StallName</h1>
+                <p class="text-muted mb-2">Event: <strong>@Model.EventName</strong> · @Model.EventLocation</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Event dates</dt>
+                    <dd class="col-sm-8">@Model.StartDate.ToString("dd MMM yyyy") - @Model.EndDate.ToString("dd MMM yyyy")</dd>
+                    <dt class="col-sm-4">Stall size</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.StallSize) ? "Not specified" : Model.StallSize)</dd>
+                    <dt class="col-sm-4">Price</dt>
+                    <dd class="col-sm-8">₹@Model.RentPerDay.ToString("N2")</dd>
+                </dl>
+            </div>
         </div>
     </div>
-    <button type="submit" class="btn btn-primary">Submit booking request</button>
-    <a asp-controller="Stalls" asp-action="Details" asp-route-id="@Model.StallId" class="btn btn-link">Cancel</a>
-</form>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Confirm reservation</h2>
+                <p class="text-muted">You'll be redirected to payment after submitting this reservation.</p>
+                <form asp-action="Book" method="post">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                    <input type="hidden" asp-for="StallId" />
+                    <input type="hidden" asp-for="EventId" />
+                    <input type="hidden" asp-for="StartDate" />
+                    <input type="hidden" asp-for="EndDate" />
+                    <button type="submit" class="btn btn-primary btn-block">Proceed to payment</button>
+                    <a asp-controller="Events" asp-action="Details" asp-route-id="@Model.EventId" class="btn btn-link btn-block">Back to event</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

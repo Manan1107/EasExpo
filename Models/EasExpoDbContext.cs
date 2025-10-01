@@ -15,16 +15,33 @@ namespace EasExpo.Models
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Feedback> Feedback { get; set; }
         public DbSet<StallOwnerApplication> StallOwnerApplications { get; set; }
+    public DbSet<Event> Events { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<Event>()
+                .HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<Stall>()
                 .HasOne(s => s.Owner)
                 .WithMany()
                 .HasForeignKey(s => s.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Stall>()
+                .HasOne(s => s.Event)
+                .WithMany(e => e.Stalls)
+                .HasForeignKey(s => s.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Stall>()
+                .HasIndex(s => new { s.EventId, s.SlotNumber })
+                .IsUnique();
 
             builder.Entity<Booking>()
                 .HasOne(b => b.Stall)

@@ -114,13 +114,13 @@
                         @if (User.IsInRole(RoleNames.StallOwner))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark @(IsActive("StallOwner", "MyStalls") ? "active" : string.Empty)" asp-controller="StallOwner" asp-action="MyStalls">My stalls</a>
+                                <a class="nav-link text-dark @(IsActive("StallOwner", "MyEvents") ? "active" : string.Empty)" asp-controller="StallOwner" asp-action="MyEvents">My events</a>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark @(IsActive("Stalls") ? "active" : string.Empty)" asp-controller="Stalls" asp-action="Index">Stalls</a>
+                                <a class="nav-link text-dark @(IsActive("Events") ? "active" : string.Empty)" asp-controller="Events" asp-action="Index">Events</a>
                             </li>
                         }
                         @if (User.IsInRole(RoleNames.Admin))
@@ -146,7 +146,7 @@
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="ownerDropdown">
                                     <a class="dropdown-item" asp-controller="StallOwner" asp-action="Dashboard">Dashboard</a>
-                                    <a class="dropdown-item" asp-controller="StallOwner" asp-action="MyStalls">My stalls</a>
+                                    <a class="dropdown-item" asp-controller="StallOwner" asp-action="MyEvents">My events</a>
                                     <a class="dropdown-item" asp-controller="StallOwner" asp-action="Bookings">Bookings</a>
                                     <a class="dropdown-item" asp-controller="StallOwner" asp-action="Feedback">Feedback</a>
                                 </div>

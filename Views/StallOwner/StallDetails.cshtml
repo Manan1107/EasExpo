@@ -6,13 +6,21 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h3 mb-1">@Model.Name</h1>
+        <div class="small text-muted mb-1">Slot #@Model.SlotNumber</div>
+        @if (!string.IsNullOrWhiteSpace(Model.EventName))
+        {
+            <div class="small text-muted mb-1">
+                Event:
+                <a asp-action="EventDetails" asp-route-id="@Model.EventId">@Model.EventName</a>
+            </div>
+        }
         <div class="text-muted">@Model.Location @if (!string.IsNullOrWhiteSpace(Model.Size)) { <text>• @Model.Size</text> }</div>
     </div>
     <div>
         <span class="badge badge-pill @(Model.Status == StallStatus.Available ? "badge-success" : Model.Status == StallStatus.Booked ? "badge-warning" : "badge-secondary") mr-2">
             @Model.Status
         </span>
-        <a asp-action="MyStalls" class="btn btn-sm btn-outline-secondary">Back to my stalls</a>
+        <a asp-action="EventDetails" asp-route-id="@Model.EventId" class="btn btn-sm btn-outline-secondary">Back to event</a>
     </div>
 </div>
 

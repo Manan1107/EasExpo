@@ -1,0 +1,82 @@
+@model IEnumerable<EasExpo.Models.ViewModels.Events.EventListItemViewModel>
+@{
+    ViewData["Title"] = "Browse events";
+    var search = ViewData["Search"] as string ?? string.Empty;
+}
+
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-3">
+    <h1 class="h3 mb-3 mb-md-0">Browse events</h1>
+    <div class="w-100 w-md-auto">
+        <input type="search" class="form-control" id="eventSearch" placeholder="Search events by name or location" value="@search" autocomplete="off" />
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No events are currently published. Check back soon.</div>
+}
+else
+{
+    <div class="row" id="eventGrid">
+    @foreach (var evt in Model)
+    {
+        var filterText = ($"{evt.Name} {evt.Location} {evt.StallSize}").ToLowerInvariant();
+        <div class="col-lg-4 col-md-6 mb-4" data-event="@filterText">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">@evt.Name</h5>
+                    <p class="card-text text-muted mb-1">@evt.Location</p>
+                    <p class="card-text mb-1"><strong>@evt.StartDate.ToString("dd MMM yyyy")</strong> - @evt.EndDate.ToString("dd MMM yyyy")</p>
+                    @if (!string.IsNullOrWhiteSpace(evt.StallSize))
+                    {
+                        <p class="card-text text-muted small mb-1">Stall size: @evt.StallSize</p>
+                    }
+                    <p class="card-text mb-2">Price per stall: <strong>₹@evt.SlotPrice.ToString("N0")</strong></p>
+                    <span class="badge badge-pill @(evt.AvailableSlots > 0 ? "badge-success" : "badge-secondary")">
+                        @evt.AvailableSlots/@evt.TotalSlots slots available
+                    </span>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a asp-action="Details" asp-route-id="@evt.Id" class="btn btn-outline-primary btn-block">View event</a>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+    <div id="eventNoResults" class="alert alert-info d-none">No events match your search.</div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            const searchInput = document.getElementById('eventSearch');
+            const cards = Array.from(document.querySelectorAll('[data-event]'));
+            const emptyState = document.getElementById('eventNoResults');
+
+            if (!searchInput || cards.length === 0) {
+                return;
+            }
+
+            const filter = () => {
+                const term = searchInput.value.trim().toLowerCase();
+                let visible = 0;
+
+                cards.forEach(card => {
+                    const keywords = card.getAttribute('data-event') || '';
+                    const isMatch = !term || keywords.indexOf(term) !== -1;
+                    card.classList.toggle('d-none', !isMatch);
+                    if (isMatch) {
+                        visible++;
+                    }
+                });
+
+                if (emptyState) {
+                    emptyState.classList.toggle('d-none', visible > 0);
+                }
+            };
+
+            searchInput.addEventListener('input', filter);
+            filter();
+        })();
+    </script>
+}

@@ -7,6 +7,8 @@ namespace EasExpo.Models.ViewModels.Bookings
     {
         public int Id { get; set; }
         public string StallName { get; set; }
+    public string EventName { get; set; }
+    public int SlotNumber { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public BookingStatus Status { get; set; }

@@ -1,0 +1,55 @@
+@model IEnumerable<EasExpo.Models.ViewModels.StallOwner.OwnerEventListItemViewModel>
+@{
+    ViewData["Title"] = "My events";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">My events</h1>
+        <p class="text-muted mb-0">Create events and manage the stall slots assigned to each.</p>
+    </div>
+    <a asp-action="CreateEvent" class="btn btn-primary">Add new event</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        You haven't published any events yet. Create your first event to start selling stall slots.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Dates</th>
+                    <th class="text-center">Availability</th>
+                    <th class="text-center">Price/stall</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var evt in Model)
+            {
+                <tr>
+                    <td>@evt.Name</td>
+                    <td>@evt.Location</td>
+                    <td>@evt.StartDate.ToString("dd MMM yyyy") - @evt.EndDate.ToString("dd MMM yyyy")</td>
+                    <td class="text-center">
+                        <span class="badge badge-pill @(evt.AvailableSlots > 0 ? "badge-success" : "badge-secondary")">
+                            @evt.AvailableSlots/@evt.TotalSlots
+                        </span>
+                    </td>
+                    <td class="text-center">₹@evt.SlotPrice.ToString("N0")</td>
+                    <td class="text-right">
+                        <a asp-action="EventDetails" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-primary">View details</a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
