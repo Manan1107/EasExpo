@@ -1,0 +1,24 @@
+@{
+    ViewData["Title"] = "Application submitted";
+}
+
+<section class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4 text-center">
+                <div class="mb-3">
+                    <span class="display-4 text-success">&#10003;</span>
+                </div>
+                <h1 class="h4 mb-3">Thanks for applying!</h1>
+                <p class="text-muted mb-4">
+                    We've received your stall owner application. Our team will review your details and reach out if we need anything else.
+                    You'll get an email once the decision is made.
+                </p>
+                <p class="mb-4">
+                    In the meantime, you can explore upcoming events or learn more about EasExpo.
+                </p>
+                <a class="btn btn-primary btn-lg" asp-controller="Home" asp-action="Index">Back to home</a>
+            </div>
+        </div>
+    </div>
+</section>

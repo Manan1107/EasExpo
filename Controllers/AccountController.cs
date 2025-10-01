@@ -81,10 +81,13 @@ namespace EasExpo.Controllers
                 return View(model);
             }
 
-            // All new users receive customer access by default
-            await _userManager.AddToRoleAsync(user, RoleNames.Customer);
+            var isStallOwner = model.UserType == RoleNames.StallOwner;
+            if (!isStallOwner)
+            {
+                await _userManager.AddToRoleAsync(user, RoleNames.Customer);
+            }
 
-            if (model.UserType == RoleNames.StallOwner)
+            if (isStallOwner)
             {
                 _context.StallOwnerApplications.Add(new StallOwnerApplication
                 {
@@ -94,20 +97,13 @@ namespace EasExpo.Controllers
                 });
                 await _context.SaveChangesAsync();
 
-                TempData["Success"] = "Registration submitted. Your stall owner application is pending admin approval.";
-            }
-            else
-            {
-                TempData["Success"] = "Registration successful. Welcome aboard!";
+                TempData["Success"] = "Application submitted. Our team will review your details and contact you shortly.";
+                return RedirectToAction(nameof(OwnerApplicationSubmitted));
             }
 
+            TempData["Success"] = "Registration successful. Welcome aboard!";
             await _signInManager.SignInAsync(user, isPersistent: false);
-            if (model.UserType == RoleNames.StallOwner)
-            {
-                return RedirectToAction(nameof(OwnerApplicationStatus));
-            }
-
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Events");
         }
 
         [HttpGet]
@@ -160,6 +156,9 @@ namespace EasExpo.Controllers
 
                 if (application != null && application.Status != ApplicationStatus.Approved)
                 {
+                    TempData["Info"] = application.Status == ApplicationStatus.Pending
+                        ? "Your stall owner application is still under review. We'll notify you once it's approved."
+                        : "Your stall owner application was reviewed. See the latest status below.";
                     return RedirectToAction(nameof(OwnerApplicationStatus));
                 }
 
@@ -168,6 +167,12 @@ namespace EasExpo.Controllers
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
             return View(model);
+        }
+
+        [AllowAnonymous]
+        public IActionResult OwnerApplicationSubmitted()
+        {
+            return View();
         }
 
         [Authorize]
