@@ -147,7 +147,7 @@ namespace EasExpo.Controllers
                     return RedirectToAction("Dashboard", "StallOwner");
                 }
 
-                return RedirectToAction("Index", "Stalls");
+                return RedirectToAction("Index", "Events");
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
