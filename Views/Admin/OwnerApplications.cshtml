@@ -46,10 +46,10 @@ else
                     <td class="text-right">
                         @if (application.Status == ApplicationStatus.Pending)
                         {
-                            <form asp-action="ApproveApplication" asp-route-id="@application.Id" method="post" class="d-inline">
+                            <form asp-action="ApproveApplication" asp-route-id="@application.Id" asp-route-returnUrl="@Url.Action("OwnerApplications", "Admin")" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-success">Approve</button>
                             </form>
-                            <form asp-action="RejectApplication" asp-route-id="@application.Id" method="post" class="d-inline ml-1">
+                            <form asp-action="RejectApplication" asp-route-id="@application.Id" asp-route-returnUrl="@Url.Action("OwnerApplications", "Admin")" method="post" class="d-inline ml-1">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
                             </form>
                         }

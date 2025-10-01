@@ -523,6 +523,28 @@ namespace EasExpo.Controllers
             return decimal.Round(amount, 2, MidpointRounding.AwayFromZero);
         }
 
+        public async Task<IActionResult> Requests()
+        {
+            var pendingApplications = await _context.StallOwnerApplications
+                .Include(a => a.User)
+                .Where(a => a.Status == ApplicationStatus.Pending)
+                .OrderBy(a => a.SubmittedAt)
+                .Select(a => new OwnerApplicationViewModel
+                {
+                    Id = a.Id,
+                    UserId = a.UserId,
+                    ApplicantName = a.User.FullName,
+                    Email = a.User.Email,
+                    CompanyName = a.User.CompanyName,
+                    DocumentUrl = a.DocumentUrl,
+                    AdditionalNotes = a.AdditionalNotes,
+                    Status = a.Status,
+                    SubmittedAt = a.SubmittedAt
+                }).ToListAsync();
+
+            return View(pendingApplications);
+        }
+
         public async Task<IActionResult> OwnerApplications()
         {
             var applications = await _context.StallOwnerApplications
@@ -546,7 +568,7 @@ namespace EasExpo.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveApplication(int id)
+        public async Task<IActionResult> ApproveApplication(int id, string returnUrl = null)
         {
             var application = await _context.StallOwnerApplications.Include(a => a.User).FirstOrDefaultAsync(a => a.Id == id);
             if (application == null)
@@ -566,12 +588,17 @@ namespace EasExpo.Controllers
             }
 
             TempData["Success"] = "Application approved.";
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
             return RedirectToAction(nameof(OwnerApplications));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RejectApplication(int id)
+        public async Task<IActionResult> RejectApplication(int id, string returnUrl = null)
         {
             var application = await _context.StallOwnerApplications.Include(a => a.User).FirstOrDefaultAsync(a => a.Id == id);
             if (application == null)
@@ -586,6 +613,11 @@ namespace EasExpo.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Application rejected.";
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
             return RedirectToAction(nameof(OwnerApplications));
         }
 
