@@ -20,7 +20,7 @@ namespace EasExpo.Data
             var roleManager = provider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = provider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            await context.Database.EnsureCreatedAsync();
+            await context.Database.MigrateAsync();
 
             await EnsureRolesAsync(roleManager);
             var admin = await EnsureAdminAsync(userManager);
