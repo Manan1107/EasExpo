@@ -50,6 +50,73 @@ DOTNET_NOLOGO=1 dotnet run
 
 > ℹ️ The project targets .NET Core 3.1, which is out of mainstream support. You can still run it with the .NET 8 SDK installed in the dev container, or upgrade the target framework to a supported LTS release as a follow-up improvement.
 
+## SQL Server connectivity checklist
+
+If the application crashes during startup with a `SqlException` stating that the server was not found (provider error 26/53/35), walk through the following steps.
+
+### 1. Ensure SQL Server is running
+
+```powershell
+# Windows – list SQL Server related services
+Get-Service *sql*
+
+# Start a specific service if needed
+Start-Service MSSQL$SQLEXPRESS
+Start-Service SQLBrowser
+
+# LocalDB
+SqlLocalDB info
+SqlLocalDB start "MSSQLLocalDB"
+```
+
+### 2. Confirm the connection string
+
+Update `ConnectionStrings:DefaultConnection` in `appsettings.json` / `appsettings.Development.json` to match your environment:
+
+| Setup | Example connection string |
+| --- | --- |
+| Visual Studio LocalDB | `Server=(localdb)\MSSQLLocalDB;Database=EasExpo;Trusted_Connection=True;MultipleActiveResultSets=true;` |
+| Default local SQL Server instance | `Server=localhost;Database=EasExpo;Trusted_Connection=True;MultipleActiveResultSets=true;` |
+| Named instance (e.g. SQLEXPRESS) | `Server=localhost\SQLEXPRESS;Database=EasExpo;Trusted_Connection=True;MultipleActiveResultSets=true;` |
+| Remote server with SQL authentication | `Server=sql.example.com,1433;Database=EasExpo;User Id=appuser;Password=StrongP@ssw0rd!;Encrypt=True;TrustServerCertificate=True;` |
+
+Remember to escape backslashes (`\\`) inside JSON files.
+
+### 3. Test connectivity manually
+
+```bash
+# SQL authentication
+sqlcmd -S localhost\SQLEXPRESS -d master -U sa -P StrongP@ssw0rd! -Q "SELECT @@SERVERNAME"
+
+# Windows authentication (run in PowerShell/CMD)
+sqlcmd -S localhost\SQLEXPRESS -Q "SELECT @@SERVERNAME"
+```
+
+If SSMS is installed, connect with the same server name and credentials. Success there means the connection string is valid.
+
+### 4. Discover available instances
+
+```bash
+sqlcmd -L                    # Broadcast search for SQL Servers
+```
+
+```powershell
+Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL'
+SqlLocalDB info
+```
+
+Use the discovered instance name in your connection string.
+
+### 5. Retry migrations and run the app
+
+```powershell
+dotnet ef database drop --force --context EasExpoDbContext
+dotnet ef database update
+dotnet run
+```
+
+If the database still cannot be reached, the startup log now includes a pointer to this checklist for deeper troubleshooting.
+
 ## Folder Highlights
 - `Controllers/` – MVC controllers for each role.
 - `Models/` – Entity models, enums, constants, and view models.

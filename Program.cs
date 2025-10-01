@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Data.SqlClient;
 
 namespace EasExpo
 {
@@ -27,7 +28,15 @@ namespace EasExpo
                 catch (Exception ex)
                 {
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred while seeding the database.");
+                    if (ex is SqlException || ex.InnerException is SqlException)
+                    {
+                        var sqlEx = ex as SqlException ?? ex.InnerException as SqlException;
+                        logger.LogError(sqlEx, "Database seeding failed. Verify that SQL Server is running, the instance name in ConnectionStrings:DefaultConnection is correct, and the credentials have access. See README.md > SQL Server connectivity checklist for troubleshooting steps.");
+                    }
+                    else
+                    {
+                        logger.LogError(ex, "An error occurred while seeding the database.");
+                    }
                     throw;
                 }
             }
