@@ -2,10 +2,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using EasExpo.Models;
 using EasExpo.Models.Constants;
+using EasExpo.Models.Enums;
 using EasExpo.Models.ViewModels.Account;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EasExpo.Controllers
 {
@@ -100,6 +102,11 @@ namespace EasExpo.Controllers
             }
 
             await _signInManager.SignInAsync(user, isPersistent: false);
+            if (model.UserType == RoleNames.StallOwner)
+            {
+                return RedirectToAction(nameof(OwnerApplicationStatus));
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -147,10 +154,57 @@ namespace EasExpo.Controllers
                     return RedirectToAction("Dashboard", "StallOwner");
                 }
 
+                var application = await _context.StallOwnerApplications
+                    .OrderByDescending(a => a.SubmittedAt)
+                    .FirstOrDefaultAsync(a => a.UserId == user.Id);
+
+                if (application != null && application.Status != ApplicationStatus.Approved)
+                {
+                    return RedirectToAction(nameof(OwnerApplicationStatus));
+                }
+
                 return RedirectToAction("Index", "Events");
             }
 
             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+            return View(model);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> OwnerApplicationStatus()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (await _userManager.IsInRoleAsync(user, RoleNames.StallOwner))
+            {
+                return RedirectToAction("Dashboard", "StallOwner");
+            }
+
+            var application = await _context.StallOwnerApplications
+                .Include(a => a.User)
+                .OrderByDescending(a => a.SubmittedAt)
+                .FirstOrDefaultAsync(a => a.UserId == user.Id);
+
+            var model = new OwnerApplicationStatusViewModel
+            {
+                HasApplication = application != null,
+                Status = application?.Status,
+                SubmittedAt = application?.SubmittedAt,
+                ReviewedAt = application?.ReviewedAt,
+                ReviewedBy = application?.ReviewedBy,
+                DocumentUrl = application?.DocumentUrl,
+                AdditionalNotes = application?.AdditionalNotes
+            };
+
+            if (application == null)
+            {
+                TempData["Error"] = "We couldn't find a stall owner application associated with your account. Please contact support or submit a new application.";
+            }
+
             return View(model);
         }
 

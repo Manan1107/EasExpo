@@ -1,0 +1,75 @@
+@model EasExpo.Models.ViewModels.Account.OwnerApplicationStatusViewModel
+@{
+    ViewData["Title"] = "Stall owner application";
+}
+
+<section class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">Stall owner onboarding</h1>
+
+                @if (!Model.HasApplication)
+                {
+                    <div class="alert alert-warning">
+                        We couldn't find an application linked to your account. Please reach out to the EasExpo team so we can help you get started as an owner.
+                    </div>
+                    <p class="mb-0">Need to start over? <a asp-controller="Account" asp-action="Register">Submit a new application</a> and choose <strong>Stall owner</strong> as your account type.</p>
+                }
+                else if (Model.IsApproved)
+                {
+                    <div class="alert alert-success">
+                        Your application was approved! You now have full access to the stall owner tools.
+                    </div>
+                    <p>
+                        Head over to your dashboard to create events, manage stalls, and review bookings.
+                    </p>
+                    <a class="btn btn-primary" asp-controller="StallOwner" asp-action="Dashboard">Go to owner dashboard</a>
+                }
+                else if (Model.IsPending)
+                {
+                    <div class="alert alert-info">
+                        Thanks for applying! Our team is reviewing your submission.
+                    </div>
+                    <p class="mb-3">We'll notify you as soon as the review is complete. You can meanwhile continue browsing events and booking stalls as a customer.</p>
+                    <div class="border rounded p-3 bg-light">
+                        <dl class="row mb-0 small">
+                            <dt class="col-sm-4">Submitted</dt>
+                            <dd class="col-sm-8">@Model.SubmittedAt?.ToLocalTime().ToString("f")</dd>
+                            @if (!string.IsNullOrWhiteSpace(Model.DocumentUrl))
+                            {
+                                <dt class="col-sm-4">Document</dt>
+                                <dd class="col-sm-8"><a href="@Model.DocumentUrl" target="_blank" rel="noopener">View attachment</a></dd>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.AdditionalNotes))
+                            {
+                                <dt class="col-sm-4">Notes</dt>
+                                <dd class="col-sm-8">@Model.AdditionalNotes</dd>
+                            }
+                        </dl>
+                    </div>
+                    <p class="mt-3 mb-0 text-muted small">Need help? Contact our support team at <a href="mailto:support@easexpo.com">support@easexpo.com</a>.</p>
+                }
+                else if (Model.IsRejected)
+                {
+                    <div class="alert alert-danger">
+                        Unfortunately your application wasn't approved this time.
+                    </div>
+                    <p>If you believe this is a mistake or you'd like to provide more details, please get in touch with the EasExpo support team.</p>
+                    <div class="border rounded p-3 bg-light">
+                        <dl class="row mb-0 small">
+                            <dt class="col-sm-4">Reviewed</dt>
+                            <dd class="col-sm-8">@Model.ReviewedAt?.ToLocalTime().ToString("f")</dd>
+                            @if (!string.IsNullOrWhiteSpace(Model.ReviewedBy))
+                            {
+                                <dt class="col-sm-4">Reviewed by</dt>
+                                <dd class="col-sm-8">@Model.ReviewedBy</dd>
+                            }
+                        </dl>
+                    </div>
+                    <p class="mt-3 mb-0 text-muted small">Questions? Email <a href="mailto:support@easexpo.com">support@easexpo.com</a> and we'll take another look.</p>
+                }
+            </div>
+        </div>
+    </div>
+</section>
