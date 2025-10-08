@@ -50,5 +50,8 @@
     </div>
 </div>
 
-<p class="text-muted">Need to update your profile? Reach out to the support team through the help &amp; support centre.</p>
-<a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Open help &amp; support</a>
+@if (!User.IsInRole(RoleNames.Admin))
+{
+    <p class="text-muted">Need to update your profile? Reach out to the support team through the help &amp; support centre.</p>
+    <a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Open help &amp; support</a>
+}
