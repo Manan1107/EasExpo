@@ -75,19 +75,26 @@
     </div>
 </section>
 
+@{
+    var showSupportBox = !User.IsInRole(RoleNames.Admin);
+}
+
 <section class="my-5">
     <div class="row align-items-center">
-        <div class="col-md-6">
+        <div class="@(showSupportBox ? "col-md-6" : "col-12")">
             <h2>Why EasExpo?</h2>
             <p class="text-muted">We combine a responsive ASP.NET Core front-end with secure identity, data-rich dashboards, and integrated Razorpay payments so your team can focus on experiences, not spreadsheets.</p>
             <p class="text-muted">Collect stall rent instantly through Razorpay while owners approve bookings and admins monitor revenue in real time.</p>
         </div>
-        <div class="col-md-6">
-            <div class="border rounded p-4 shadow-sm bg-white">
-                <h5 class="mb-3">Need assistance?</h5>
-                <p class="text-muted mb-3">Visit our help centre to find guides, or reach out to the support team whenever you get stuck.</p>
-                <a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Go to help &amp; support</a>
+        @if (showSupportBox)
+        {
+            <div class="col-md-6">
+                <div class="border rounded p-4 shadow-sm bg-white">
+                    <h5 class="mb-3">Need assistance?</h5>
+                    <p class="text-muted mb-3">Visit our help centre to find guides, or reach out to the support team whenever you get stuck.</p>
+                    <a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Go to help &amp; support</a>
+                </div>
             </div>
-        </div>
+        }
     </div>
 </section>

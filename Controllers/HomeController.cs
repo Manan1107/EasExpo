@@ -57,7 +57,7 @@ namespace EasExpo.Controllers
             return RedirectToAction("Feedback", "Bookings", new { bookingId = booking.Id });
         }
 
-        [Authorize(Roles = RoleNames.Customer)]
+        [Authorize(Roles = RoleNames.Customer + "," + RoleNames.StallOwner)]
         public IActionResult Support()
         {
             return View();
