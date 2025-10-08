@@ -128,7 +128,6 @@
                                 </a>
                                 <div class="dropdown-menu" aria-labelledby="adminDropdown">
                                     <a class="dropdown-item @(IsActive("Admin", "Dashboard") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
-                                    <a class="dropdown-item @(IsActive("Admin", "Requests") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Requests">Requests</a>
                                     <a class="dropdown-item @(IsActive("Admin", "Users") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Users">Users</a>
                                     <a class="dropdown-item @(IsActive("Admin", "Stalls") ? "active" : string.Empty)" asp-controller="Admin" asp-action="Stalls">Stalls</a>
                                     <a class="dropdown-item @(IsActive("Admin", "OwnerApplications") ? "active" : string.Empty)" asp-controller="Admin" asp-action="OwnerApplications">Owner applications</a>

@@ -87,10 +87,6 @@
                 <h5 class="mb-3">Need assistance?</h5>
                 <p class="text-muted mb-3">Visit our help centre to find guides, or reach out to the support team whenever you get stuck.</p>
                 <a asp-controller="Home" asp-action="Support" class="btn btn-outline-primary">Go to help &amp; support</a>
-                @if (User.IsInRole(RoleNames.Customer))
-                {
-                    <a asp-controller="Home" asp-action="Feedback" class="btn btn-link d-block mt-2 pl-0">Share feedback</a>
-                }
             </div>
         </div>
     </div>
