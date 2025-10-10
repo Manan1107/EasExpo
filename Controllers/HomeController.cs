@@ -40,12 +40,16 @@ namespace EasExpo.Controllers
             var userId = _userManager.GetUserId(User);
 
             var booking = await _context.Bookings
-                .Include(b => b.Stall)
                 .Where(b => b.CustomerId == userId
                     && b.Status == BookingStatus.Approved
                     && b.PaymentStatus == PaymentStatus.Completed)
-                .Where(b => !_context.Feedback.Any(f => f.BookingId == b.Id))
                 .OrderByDescending(b => b.EndDate)
+                .Select(b => new
+                {
+                    BookingId = b.Id,
+                    HasFeedback = _context.Feedback.Any(f => f.BookingId == b.Id)
+                })
+                .Where(x => !x.HasFeedback)
                 .FirstOrDefaultAsync();
 
             if (booking == null)
@@ -54,7 +58,7 @@ namespace EasExpo.Controllers
                 return RedirectToAction("MyBookings", "Bookings");
             }
 
-            return RedirectToAction("Feedback", "Bookings", new { bookingId = booking.Id });
+            return RedirectToAction("Feedback", "Bookings", new { bookingId = booking.BookingId });
         }
 
         [Authorize(Roles = RoleNames.Customer + "," + RoleNames.StallOwner)]

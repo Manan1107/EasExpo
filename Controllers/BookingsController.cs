@@ -137,8 +137,23 @@ namespace EasExpo.Controllers
                     Status = b.Status,
                     PaymentStatus = b.PaymentStatus,
                     Amount = CalculateAmount(b.StartDate, b.EndDate, b.Stall.RentPerDay),
-                    HasFeedback = _context.Feedback.Any(f => f.BookingId == b.Id)
+                    HasFeedback = false
                 }).ToListAsync();
+
+            if (bookings.Count > 0)
+            {
+                var bookingIds = bookings.Select(b => b.Id).ToList();
+                var feedbackIds = await _context.Feedback
+                    .Where(f => bookingIds.Contains(f.BookingId))
+                    .Select(f => f.BookingId)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var booking in bookings)
+                {
+                    booking.HasFeedback = feedbackIds.Contains(booking.Id);
+                }
+            }
 
             return View(bookings);
         }
