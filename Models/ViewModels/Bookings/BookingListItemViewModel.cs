@@ -14,5 +14,6 @@ namespace EasExpo.Models.ViewModels.Bookings
         public BookingStatus Status { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
         public decimal Amount { get; set; }
+        public bool HasFeedback { get; set; }
     }
 }

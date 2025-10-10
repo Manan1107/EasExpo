@@ -136,7 +136,8 @@ namespace EasExpo.Controllers
                     EndDate = b.EndDate,
                     Status = b.Status,
                     PaymentStatus = b.PaymentStatus,
-                    Amount = CalculateAmount(b.StartDate, b.EndDate, b.Stall.RentPerDay)
+                    Amount = CalculateAmount(b.StartDate, b.EndDate, b.Stall.RentPerDay),
+                    HasFeedback = _context.Feedback.Any(f => f.BookingId == b.Id)
                 }).ToListAsync();
 
             return View(bookings);
