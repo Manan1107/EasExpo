@@ -52,12 +52,6 @@ namespace EasExpo.Controllers
                 .Where(x => !x.HasFeedback)
                 .FirstOrDefaultAsync();
 
-            if (booking == null)
-            {
-                TempData["Error"] = "You need at least one paid booking without feedback before leaving feedback.";
-                return RedirectToAction("MyBookings", "Bookings");
-            }
-
             return RedirectToAction("Feedback", "Bookings", new { bookingId = booking.BookingId });
         }
 
