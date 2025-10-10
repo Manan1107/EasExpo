@@ -231,6 +231,34 @@ namespace EasExpo.Controllers
                 return RedirectToAction(nameof(Users));
             }
 
+            var blockers = new System.Collections.Generic.List<string>();
+
+            if (await _context.Events.AnyAsync(e => e.OwnerId == id))
+            {
+                blockers.Add("active events");
+            }
+
+            if (await _context.Stalls.AnyAsync(s => s.OwnerId == id))
+            {
+                blockers.Add("assigned stalls");
+            }
+
+            if (await _context.Bookings.AnyAsync(b => b.CustomerId == id))
+            {
+                blockers.Add("customer bookings");
+            }
+
+            if (await _context.StallOwnerApplications.AnyAsync(a => a.UserId == id && a.Status == ApplicationStatus.Pending))
+            {
+                blockers.Add("pending stall owner application");
+            }
+
+            if (blockers.Count > 0)
+            {
+                TempData["Error"] = $"Cannot delete this account because it still has {string.Join(", ", blockers)}. Please reassign or remove the related records first.";
+                return RedirectToAction(nameof(Users));
+            }
+
             await _userManager.DeleteAsync(user);
             TempData["Success"] = "User removed.";
             return RedirectToAction(nameof(Users));
